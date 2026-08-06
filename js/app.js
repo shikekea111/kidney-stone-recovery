@@ -6,7 +6,6 @@
   const $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   const view = document.getElementById('view');
   const pageTitle = document.getElementById('pageTitle');
-  const FEEDBACK_URL = 'https://github.com/shikekea111/kidney-stone-recovery/issues';
   const TITLES = { advice: '今日建议', timeline: '健康时间线', record: '记录', food: '饮食查询', me: '我的' };
   let currentTab = 'advice';
   let dietPicks = [];
@@ -107,22 +106,52 @@
     const tl = Store.getTimeline();
     const rp = Store.getReports();
     const adv = Advice.buildAdvice(p, tl, rp);
-    let summary = '尚未填写个人档案，建议到「我的」完善。';
-    if (p) {
-      const ds = Advice.daysSince(p.surgeryDate);
-      summary = '结石类型：' + stoneLabel(p.stoneType) + '　·　' +
-        (ds !== null && ds >= 0 ? '术后第 ' + ds + ' 天' : (p.surgeryDate ? '手术日期：' + p.surgeryDate : '未填手术日期')) +
-        '　·　饮水目标 ' + (p.waterGoal || 2000) + 'ml/天';
-    }
+
+    // —— 仪表盘数据 ——
+    const ds = (p && p.surgeryDate) ? Advice.daysSince(p.surgeryDate) : null;
+    const goal = (p && p.waterGoal) || 2000;
+    const tStr = Store.todayStr();
+    let waterTotal = 0;
+    tl.forEach(function (e) {
+      if (e.type === 'water' && e.date === tStr) waterTotal += Number((e.detail && e.detail.amount) || 0);
+    });
+    const waterPct = Math.min(100, Math.round(waterTotal / goal * 100));
+    const name = (p && p.name) ? p.name : '';
+    const nowD = new Date();
+    const dateStr = (nowD.getMonth() + 1) + '月' + nowD.getDate() + '日';
+
+    // 问候语与阶段文案
+    let greet = name ? ('你好，' + name) : '你好';
+    let sub;
+    if (!p) sub = '完善个人档案，获得专属康复建议';
+    else if (ds === null) sub = '记得到「我的」填写手术日期';
+    else if (ds < 0) sub = '手术日期待确认，请核对档案';
+    else if (ds <= 7) sub = '术后急性恢复期 · 多休息、多喝水';
+    else if (ds <= 30) sub = '恢复早期 · 逐步活动，避免剧烈';
+    else if (ds <= 90) sub = '恢复中期 · 重点预防复发';
+    else sub = '长期管理期 · 坚持饮水与复查';
+
+    // 术后天数显示
+    let dayNum, dayUnit = '', dayLbl = '术后天数';
+    if (ds !== null && ds >= 0) { dayNum = ds; dayUnit = '天'; dayLbl = '术后第几天'; }
+    else { dayNum = '—'; }
+
     let html = '';
-    html += '<div class="card">';
-    html += '<div class="row-between"><h2>👋 今日概览</h2></div>';
-    html += '<div class="muted">' + esc(summary) + '</div>';
-    html += '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">';
-    html += '<button class="btn secondary sm" onclick="App.quickSymptom()">记症状</button>';
-    html += '<button class="btn secondary sm" onclick="App.quickWater()">记饮水</button>';
-    html += '<button class="btn secondary sm" onclick="App.go(\'food\')">查饮食</button>';
+    html += '<div class="hero">';
+    html += '<div class="hero-top"><div><div class="hero-greet">' + esc(greet) + ' 👋</div><div class="hero-sub">' + esc(sub) + '</div></div><div class="hero-date">' + esc(dateStr) + '</div></div>';
+    html += '<div class="hero-stats">';
+    html += '<div class="hstat"><div class="hstat-num">' + dayNum + (dayUnit ? '<span class="hstat-unit">' + dayUnit + '</span>' : '') + '</div><div class="hstat-lbl">' + dayLbl + '</div></div>';
+    html += '<div class="hstat"><div class="hstat-num">' + waterTotal + '<span class="hstat-unit">ml</span></div><div class="hstat-lbl">今日饮水</div></div>';
+    html += '</div>';
+    html += '<div class="water-bar"><div class="water-fill" style="width:' + waterPct + '%"></div></div>';
+    html += '<div class="water-txt">饮水目标 ' + goal + 'ml · 还差 ' + Math.max(0, goal - waterTotal) + 'ml（少量多次更护肾）</div>';
+    html += '<div class="hero-actions">';
+    html += '<button class="btn-light" onclick="App.quickSymptom()">记症状</button>';
+    html += '<button class="btn-light" onclick="App.quickWater()">记饮水</button>';
+    html += '<button class="btn-light" onclick="App.quickDiet()">记饮食</button>';
+    html += '<button class="btn-light" onclick="App.go(\'food\')">查饮食</button>';
     html += '</div></div>';
+
     html += renderDietScore();
     adv.forEach(function (a) {
       html += '<div class="advice ' + a.level + '"><div class="a-title">' + esc(a.title) + '</div><div class="a-text">' + esc(a.text) + '</div></div>';
@@ -132,19 +161,20 @@
     view.innerHTML = html;
   }
 
-  // 今日饮食评分卡片
+  // 今日饮食评分卡片（环形仪表）
   function renderDietScore() {
     const p = Store.getProfile();
     const tl = Store.getTimeline();
     const s = Advice.scoreTodayDiet(p, tl);
-    let html = '<div class="card diet-score' + (s.empty ? '' : ' ' + s.level) + '">';
+    let html = '<div class="diet-score">';
     html += '<div class="row-between"><h2>🍱 今日饮食评分</h2><span class="muted">' + esc(s.date) + '</span></div>';
     if (s.empty) {
       html += '<div class="muted" style="margin-top:8px">' + esc(s.text) + '</div>';
     } else {
-      html += '<div class="score-row">';
-      html += '<div class="score-big ' + s.level + '">' + s.score + '<span class="score-unit">分</span></div>';
-      html += '<div class="score-meta"><div class="score-level ' + s.level + '">' + s.levelText + '</div>';
+      const ringColor = s.level === 'good' ? 'var(--ring-good)' : (s.level === 'info' ? 'var(--ring-info)' : 'var(--ring-warn)');
+      html += '<div class="score-gauge">';
+      html += '<div class="score-ring" style="--p:' + s.score + '; --ring:' + ringColor + '"><div class="ring-hole"><div class="ring-num">' + s.score + '<span class="ring-unit">分</span></div><div class="ring-lvl" style="color:' + ringColor + '">' + s.levelText + '</div></div></div>';
+      html += '<div class="score-meta"><div class="score-level ' + s.level + '">' + s.levelText + ' · ' + s.total + ' 种食物</div>';
       html += '<div class="score-tags"><span class="badge ok">可吃 ' + s.ok + '</span><span class="badge limit">适量 ' + s.limit + '</span><span class="badge avoid">忌口 ' + s.avoid + '</span></div></div>';
       html += '</div>';
       html += '<div class="score-analysis">' + esc(s.analysis) + '</div>';
@@ -152,9 +182,9 @@
         html += '<div class="score-avoid">⚠️ 忌口食物：' + s.avoidList.map(function (i) { return esc(i.name); }).join('、') + '</div>';
       }
       s.suggestions.forEach(function (t) {
-        html += '<div class="score-sug">• ' + esc(t) + '</div>';
+        html += '<div class="score-sug">' + esc(t) + '</div>';
       });
-      html += '<button class="btn secondary sm" style="margin-top:10px" onclick="App.go(\'food\')">去查食物宜忌</button>';
+      html += '<button class="btn secondary sm" style="margin-top:12px" onclick="App.go(\'food\')">去查食物宜忌</button>';
     }
     html += '</div>';
     return html;
@@ -460,12 +490,10 @@
     const aiStatus = (ai.enabled && ai.apiKey) ? '已启用' : '未启用';
     html += '<div class="card" onclick="App.openAISettings()" style="cursor:pointer"><div class="row-between"><h2>🤖 AI 助手设置</h2><span class="muted">' + aiStatus + ' ›</span></div><div class="muted">接入大模型后可自由提问、解读报告。默认关闭，启用需填写 API Key，数据策略本地优先。</div></div>';
 
-    html += '<div class="card" onclick="window.open(FEEDBACK_URL, \'_blank\')" style="cursor:pointer"><div class="row-between"><h2>💬 反馈建议</h2><span class="muted">›</span></div><div class="muted">有问题或新功能建议？点这里到 GitHub Issues 留言（不会收集你存在本机的数据）。</div></div>';
-
     html += '<div class="card"><h2>💾 数据备份</h2><p class="muted">数据只存在本机。换手机前请导出备份，再导入新手机。</p>';
     html += '<div style="display:flex;gap:8px"><button class="btn secondary sm" onclick="App.exportBackup()">导出备份</button><button class="btn secondary sm" onclick="App.importBackup()">导入备份</button></div></div>';
 
-    html += '<div class="card"><h2>ℹ️ 关于与免责</h2><p class="muted" style="white-space:pre-line">本应用所有内容仅为健康信息整理与通用建议，不能替代医生诊断与治疗。如出现剧烈疼痛、发热、持续血尿等请及时就医。\n\n所有数据仅保存在你本机浏览器，不会上传任何服务器。\n\n想提建议或反馈问题？点上方"反馈建议"到 GitHub Issues 留言。</p></div>';
+    html += '<div class="card"><h2>ℹ️ 关于与免责</h2><p class="muted" style="white-space:pre-line">本应用所有内容仅为健康信息整理与通用建议，不能替代医生诊断与治疗。如出现剧烈疼痛、发热、持续血尿等请及时就医。\n\n所有数据仅保存在你本机浏览器，不会上传任何服务器。</p></div>';
     view.innerHTML = html;
   }
   function openProfileForm() {
@@ -625,9 +653,10 @@
     const c = Store.getAIConfig();
     let html = '<h2>🤖 AI 助手设置</h2>';
     html += '<div class="ai-warn">⚠️ API Key 仅保存在你本机浏览器，不会上传到本应用服务器。但调用时你的问题内容会发送给你所填的 AI 服务商。请仅使用你信任的服务，并妥善保管 Key，不要泄露。</div>';
-    html += field('启用 AI 助手',
-      '<label class="switch-row"><input type="checkbox" id="ai_enabled"' + (c.enabled ? ' checked' : '') + '><span class="switch"></span></label>');
-    html += field('API 地址（Base URL）', '<input type="text" id="ai_base" value="' + esc(c.apiBase) + '" placeholder="如 https://api.deepseek.com/v1">');
+    html += '<label class="field ai-switch-field"><span class="ai-switch-label">启用 AI 助手</span>' +
+      '<input type="checkbox" id="ai_enabled" class="ai-switch-input"' + (c.enabled ? ' checked' : '') + '>' +
+      '<span class="switch"></span></label>';
+    html += field('服务地址（Base URL）', '<input type="text" id="ai_base" value="' + esc(c.apiBase) + '" placeholder="如 https://api.deepseek.com/v1">');
     html += field('API Key', '<input type="password" id="ai_key" value="' + esc(c.apiKey) + '" placeholder="sk-..." autocomplete="off">');
     html += field('模型名', '<input type="text" id="ai_model" value="' + esc(c.model) + '" placeholder="如 deepseek-chat">');
     html += '<div class="field"><label>兼容说明</label><div class="muted">接口采用 OpenAI Chat Completions 格式，可填写 DeepSeek、通义千问、豆包、OpenAI 等。需服务商支持浏览器跨域(CORS)。</div></div>';
@@ -843,7 +872,7 @@
     foodSearch: foodSearch,
     openProfileForm: openProfileForm, saveProfile: saveProfile,
     exportBackup: exportBackup, importBackup: importBackup,
-    delEvent: delEvent, quickSymptom: quickSymptom, quickWater: quickWater,
+    delEvent: delEvent, quickSymptom: quickSymptom, quickWater: quickWater, quickDiet: openDietForm,
     openAIChat: openAIChat, sendAI: sendAI, aiKey: aiKey,
     openAISettings: openAISettings, saveAISettings: saveAISettings,
     openReportOCR: openReportOCR, ocrPreview: ocrPreview,
