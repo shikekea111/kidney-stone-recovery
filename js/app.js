@@ -6,7 +6,7 @@
   const $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   const view = document.getElementById('view');
   const pageTitle = document.getElementById('pageTitle');
-  const FEEDBACK_URL = 'https://github.com/YOUR_USERNAME/kidney-stone-recovery/issues';
+  const FEEDBACK_URL = 'https://github.com/shikekea111/kidney-stone-recovery/issues';
   const TITLES = { advice: '今日建议', timeline: '健康时间线', record: '记录', food: '饮食查询', me: '我的' };
   let currentTab = 'advice';
   let dietPicks = [];
