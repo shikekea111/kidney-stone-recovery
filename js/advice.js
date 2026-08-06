@@ -127,7 +127,7 @@
         for (let i = 0; i < nodes.length; i++) {
           const n = nodes[i];
           if (ds < n && ds > n - 14) {
-            out.push({ level: 'info', title: '复查提醒', text: '术后约 ' + n + ' 天，建议复查（如尿常规、B超/CT），评估恢复与有无残留或复发。请遵主刀医生安排。' });
+            out.push({ level: 'info', title: '复查提醒', text: '建议在术后第 ' + n + ' 天左右复查（如尿常规、B超/CT），评估恢复与有无残留或复发。请遵主刀医生安排。' });
             break;
           }
         }
