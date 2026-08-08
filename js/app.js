@@ -181,6 +181,9 @@
       if (s.avoidList && s.avoidList.length) {
         html += '<div class="score-avoid">⚠️ 忌口食物：' + s.avoidList.map(function (i) { return esc(i.name); }).join('、') + '</div>';
       }
+      if (s.limitList && s.limitList.length) {
+        html += '<div class="score-limit">⚖️ 适量食物：' + s.limitList.map(function (i) { return esc(i.name); }).join('、') + '</div>';
+      }
       s.suggestions.forEach(function (t) {
         html += '<div class="score-sug">' + esc(t) + '</div>';
       });
@@ -240,8 +243,10 @@
   }
 
   // ---------- 饮食 ----------
+  var dietAllParts = [];
   function openDietForm() {
     dietPicks = [];
+    dietAllParts = [];
     let html = '<h2>🍽️ 饮食记录</h2>';
     html += field('日期', '<input type="date" id="f_date" value="' + today() + '">');
     html += '<div class="field"><label>餐次</label><div class="chip-row">' + chips('meal', ['早餐', '午餐', '晚餐'], defaultMeal()) + '</div></div>';
@@ -255,15 +260,31 @@
     const q = val('diet_search').trim();
     const box = $('#diet_cand');
     if (!box) return;
-    if (!q) { box.innerHTML = ''; return; }
+    if (!q) { box.innerHTML = ''; dietAllParts = []; return; }
     const profile = Store.getProfile();
     const stone = profile ? profile.stoneType : 'unknown';
     // 精确匹配
     const exact = Knowledge.FOODS.filter(function (f) { return f.name.indexOf(q) >= 0 || f.cat.indexOf(q) >= 0; });
+    // 菜谱匹配：输入文本命中菜名 → 列出组成食材（来自 DISHES）
+    const dishParts = [];
+    let matchedDish = '';
+    Knowledge.DISHES.forEach(function (d) {
+      if (q.indexOf(d.name) >= 0 || d.name.indexOf(q) >= 0) {
+        matchedDish = d.name;
+        d.ingredients.forEach(function (ing) {
+          if (Knowledge.findFood(ing) && dishParts.indexOf(ing) < 0) dishParts.push(ing);
+        });
+      }
+    });
     // 成分识别：输入文本中包含的食物名（如"番茄鸡蛋汤"→番茄、鸡蛋）
-    const parts = Knowledge.FOODS.filter(function (f) {
+    const subParts = Knowledge.FOODS.filter(function (f) {
       return f.name.length >= 2 && q.indexOf(f.name) >= 0 && exact.indexOf(f) < 0;
     });
+    // 合并菜谱与子串识别结果，去重
+    const allNames = dishParts.concat(subParts.map(function (f) { return f.name; }));
+    const allParts = [];
+    allNames.forEach(function (n) { if (allParts.indexOf(n) < 0) allParts.push(n); });
+    dietAllParts = allParts;
     let html = '';
     if (exact.length) {
       html += exact.slice(0, 8).map(function (f) {
@@ -271,21 +292,29 @@
         return '<div class="food-item" onclick="App.addPick(\'' + esc(f.name) + '\')"><div class="food-main"><div class="food-name">' + esc(f.name) + '</div><div class="food-cat">' + esc(f.cat) + '</div></div><span class="badge ' + j.verdict + '">' + j.label + '</span></div>';
       }).join('');
     }
-    if (parts.length) {
-      const list = parts.slice(0, 12).map(function (f) {
+    if (allParts.length) {
+      const qIsExactFood = exact.some(function (f) { return f.name === q; });
+      const title = (matchedDish && !qIsExactFood)
+        ? ('识别为菜品：' + matchedDish + '，已列出常见食材（点选或一键加入）：')
+        : ('从「' + q + '」中识别出以下食材（点选或一键加入）：');
+      const list = allParts.slice(0, 16).map(function (n) {
+        const f = Knowledge.findFood(n);
         const j = Knowledge.judge(f, stone);
-        return '<div class="food-item" onclick="App.addPick(\'' + esc(f.name) + '\')"><div class="food-main"><div class="food-name">' + esc(f.name) + '</div><div class="food-cat">' + esc(f.cat) + '</div></div><span class="badge ' + j.verdict + '">' + j.label + '</span></div>';
+        return '<div class="food-item" onclick="App.addPick(\'' + esc(n) + '\')"><div class="food-main"><div class="food-name">' + esc(n) + '</div><div class="food-cat">' + esc(f ? f.cat : '') + '</div></div><span class="badge ' + j.verdict + '">' + j.label + '</span></div>';
       }).join('');
-      html += '<div class="ocr-hint">从「' + esc(q) + '」中识别出以下食材（点选或一键加入）：</div>' + list +
-        '<div style="margin:6px 0 10px"><button class="btn sm" onclick="App.addAllParts()">全部加入（' + parts.length + '）</button></div>';
+      html += '<div class="ocr-hint">' + esc(title) + '</div>' + list +
+        '<div style="margin:6px 0 10px"><button class="btn sm" onclick="App.addAllParts()">全部加入（' + allParts.length + '）</button></div>';
     }
     box.innerHTML = html;
   }
   function addAllParts() {
-    const q = val('diet_search').trim();
-    if (!q) return;
-    const parts = Knowledge.FOODS.filter(function (f) { return f.name.length >= 2 && q.indexOf(f.name) >= 0; });
-    parts.forEach(function (f) { addPick(f.name); });
+    let names = dietAllParts;
+    if (!names || !names.length) {
+      const q = val('diet_search').trim();
+      if (!q) return;
+      names = Knowledge.FOODS.filter(function (f) { return f.name.length >= 2 && q.indexOf(f.name) >= 0; }).map(function (f) { return f.name; });
+    }
+    names.forEach(function (n) { addPick(n); });
     const s = $('#diet_search'); if (s) s.value = '';
     const box = $('#diet_cand'); if (box) box.innerHTML = '';
   }

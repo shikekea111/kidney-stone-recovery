@@ -305,6 +305,7 @@ input[type="radio"] { display: none; }
 .score-tags { display: flex; gap: 6px; margin-top: 9px; flex-wrap: wrap; }
 .score-analysis { margin-top: 14px; font-size: 14px; color: #2c3a35; line-height: 1.65; }
 .score-avoid { margin-top: 9px; font-size: 14px; color: var(--avoid); font-weight: 700; line-height: 1.6; }
+.score-limit { margin-top: 9px; font-size: 14px; color: var(--info); font-weight: 700; line-height: 1.6; }
 .score-sug { margin-top: 8px; font-size: 14px; color: #2c3a35; line-height: 1.65; }
 .score-sug::before { content: '• '; color: var(--primary); font-weight: 800; }
 

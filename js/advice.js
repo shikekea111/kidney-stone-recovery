@@ -172,12 +172,27 @@
       };
     }
 
-    // 评分：基础分 + 可吃加分 + 适量加分 - 忌口扣分，限制在 0~100
+    // 饮水联动：先算当天饮水合计，作为评分正向因素（达标最多 +15，超额不额外加分防刷分）
+    const waterEvents = timeline.filter(function (e) {
+      return e.type === 'water' && e.date === today;
+    });
+    let wtotal = 0;
+    waterEvents.forEach(function (e) { wtotal += Number((e.detail && e.detail.amount) || 0); });
+    const waterGoal = (profile && profile.waterGoal) || 2000;
+    const waterPct = waterGoal > 0 ? wtotal / waterGoal : 0;
+    const waterBonus = Math.round(Math.min(waterPct, 1) * 15);
+
+    // 评分：基础分 + 可吃加分 + 适量加分 + 饮水加分 - 忌口扣分，限制在 0~100
     let raw = 50;
     raw += ok.length * 12;
     raw += limit.length * 6;
-    raw -= avoid.length * 22;
-    const score = Math.max(0, Math.min(100, raw));
+    raw -= avoid.length * 25;
+    raw += waterBonus;
+    let score = Math.max(0, Math.min(100, raw));
+    // 有忌口食物时不允许满分：最高压到 89（不超过「良好」上限），但饮水达标可拉到接近良好上限
+    if (avoid.length) {
+      score = Math.min(score, 89);
+    }
 
     let level, levelText;
     if (score >= 85) { level = 'good'; levelText = '优秀'; }
@@ -196,7 +211,8 @@
       suggestions.push('今天有 ' + avoid.length + ' 种忌口食物（' + names + '）。草酸钙结石应尽量不吃或少吃高草酸/高盐食物；下次可先到「能吃什么」查询更合适的替代。');
     }
     if (limit.length) {
-      suggestions.push(limit.length + ' 种属于「适量」类（如奶类、豆制品、部分水产），建议控制分量，不要一次吃太多。');
+      const names = limit.map(function (i) { return i.name; }).join('、');
+      suggestions.push('今天有 ' + limit.length + ' 种「适量」食物（' + names + '）。建议控制分量，不要一次吃太多，尤其是豆制品、部分水产或高蛋白类。');
     }
     if (!avoid.length && ok.length) {
       suggestions.push('今天饮食整体对结石友好，继续保持！注意搭配均衡、不过量，并配合每日饮水目标。');
@@ -204,18 +220,19 @@
     if (total <= 2) {
       suggestions.push('目前记录的食物较少，评分仅供参考。建议把三餐都记上，结果会更准。');
     }
-    // 饮水联动
-    const waterEvents = timeline.filter(function (e) { return e.type === 'water' && e.date === today; });
-    let wtotal = 0;
-    waterEvents.forEach(function (e) { wtotal += Number((e.detail && e.detail.amount) || 0); });
+    // 饮水反馈（waterEvents/wtotal/waterGoal/waterPct 已在上方算好）
     if (!waterEvents.length) {
-      suggestions.push('今天还没记饮水。充足饮水是防复发的关键，记得补记（目标 ' + ((profile && profile.waterGoal) || 2000) + 'ml）。');
+      suggestions.push('今天还没记饮水。充足饮水是防复发的关键，记得补记（目标 ' + waterGoal + 'ml）。');
+    } else if (waterPct >= 1) {
+      suggestions.push('今日饮水已达标（' + wtotal + '/' + waterGoal + 'ml），很好，有助于冲刷尿路、减少结石复发。');
+    } else {
+      suggestions.push('今日饮水 ' + wtotal + '/' + waterGoal + 'ml（约 ' + Math.round(waterPct * 100) + '%），还差一些，尽量多喝点。');
     }
 
     return {
       date: today, empty: false, score: score, level: level, levelText: levelText,
       total: total, ok: ok.length, limit: limit.length, avoid: avoid.length,
-      avoidList: avoid, analysis: analysis, suggestions: suggestions
+      avoidList: avoid, limitList: limit, analysis: analysis, suggestions: suggestions
     };
   }
 

@@ -227,7 +227,66 @@
     // ---------- 草药茶饮 ----------
     { name: '金钱草', cat: '草药茶', ox: 'ok', ur: 'ok', note: '传统利尿排石，适量泡水（遵医嘱）。' },
     { name: '玉米须', cat: '草药茶', ox: 'ok', ur: 'ok', note: '利尿，适量。' },
-    { name: '车前草', cat: '草药茶', ox: 'ok', ur: 'ok', note: '利尿，适量（遵医嘱）。' }
+    { name: '车前草', cat: '草药茶', ox: 'ok', ur: 'ok', note: '利尿，适量（遵医嘱）。' },
+
+    // ---------- 调料（补全：菜谱常用） ----------
+    { name: '白糖', cat: '调料', ox: 'ok', ur: 'ok', note: '纯糖，草酸与嘌呤均极低，两类结石均可适量；注意总体控糖。' },
+    { name: '辣椒', cat: '调料', ox: 'ok', ur: 'limit', note: '中低嘌呤，草酸钙结石可吃；尿酸结石适量。泡椒/干辣椒同属。' }
+  ];
+
+  // ---------- 常见菜 → 组成食材（用于菜名识别） ----------
+  // ingredients 只引用 FOODS 中已有的 name；调料类(糖/辣椒)已补全。
+  const DISHES = [
+    { name: '鱼香肉丝', ingredients: ['猪肉', '木耳', '胡萝卜', '青椒', '竹笋', '大葱', '大蒜', '生姜', '醋', '番茄酱'] },
+    { name: '宫保鸡丁', ingredients: ['鸡肉', '花生', '黄瓜', '胡萝卜', '大葱'] },
+    { name: '番茄炒蛋', ingredients: ['番茄', '鸡蛋'] },
+    { name: '青椒肉丝', ingredients: ['青椒', '猪肉'] },
+    { name: '麻婆豆腐', ingredients: ['豆腐', '猪肉', '大葱'] },
+    { name: '青椒土豆丝', ingredients: ['青椒', '土豆'] },
+    { name: '酸辣土豆丝', ingredients: ['土豆', '辣椒', '醋'] },
+    { name: '红烧肉', ingredients: ['猪肉', '白糖', '生姜'] },
+    { name: '糖醋里脊', ingredients: ['猪肉', '白糖', '番茄酱'] },
+    { name: '回锅肉', ingredients: ['猪肉', '青椒', '洋葱', '蒜苗'] },
+    { name: '小炒肉', ingredients: ['猪肉', '青椒', '大蒜', '生姜'] },
+    { name: '红烧茄子', ingredients: ['茄子', '猪肉', '大蒜', '生姜'] },
+    { name: '地三鲜', ingredients: ['茄子', '土豆', '青椒'] },
+    { name: '木须肉', ingredients: ['猪肉', '木耳', '黄瓜', '鸡蛋'] },
+    { name: '番茄鸡蛋汤', ingredients: ['番茄', '鸡蛋'] },
+    { name: '紫菜蛋花汤', ingredients: ['紫菜', '鸡蛋'] },
+    { name: '冬瓜排骨汤', ingredients: ['冬瓜', '猪肉'] },
+    { name: '菠菜豆腐汤', ingredients: ['菠菜', '豆腐'] },
+    { name: '黄瓜炒鸡蛋', ingredients: ['黄瓜', '鸡蛋'] },
+    { name: '韭菜炒鸡蛋', ingredients: ['韭菜', '鸡蛋'] },
+    { name: '芹菜炒香干', ingredients: ['芹菜', '豆腐干'] },
+    { name: '蒜蓉西兰花', ingredients: ['西兰花', '大蒜'] },
+    { name: '蚝油生菜', ingredients: ['生菜', '大蒜'] },
+    { name: '香菇油菜', ingredients: ['香菇', '白菜'] },
+    { name: '清炒时蔬', ingredients: ['白菜', '胡萝卜', '木耳'] },
+    { name: '土豆炖牛肉', ingredients: ['土豆', '牛肉', '胡萝卜'] },
+    { name: '萝卜炖排骨', ingredients: ['白萝卜', '猪肉'] },
+    { name: '可乐鸡翅', ingredients: ['鸡肉', '可乐'] },
+    { name: '清蒸鱼', ingredients: ['鱼肉', '大葱', '生姜'] },
+    { name: '酸菜鱼', ingredients: ['鱼肉', '辣椒', '豆芽', '白菜'] },
+    { name: '水煮肉片', ingredients: ['猪肉', '辣椒', '白菜', '豆芽'] },
+    { name: '蚂蚁上树', ingredients: ['猪肉', '大葱', '酱油'] },
+    { name: '尖椒土豆丝', ingredients: ['辣椒', '土豆'] },
+    { name: '凉拌黄瓜', ingredients: ['黄瓜', '大蒜', '醋'] },
+    { name: '拍黄瓜', ingredients: ['黄瓜', '大蒜', '醋'] },
+    { name: '西兰花炒虾仁', ingredients: ['西兰花', '虾'] },
+    { name: '虾仁蒸蛋', ingredients: ['虾', '鸡蛋'] },
+    { name: '鸡蛋羹', ingredients: ['鸡蛋'] },
+    { name: '小米粥', ingredients: ['小米粥'] },
+    { name: '皮蛋瘦肉粥', ingredients: ['皮蛋', '猪肉', '米饭'] },
+    { name: '红烧豆腐', ingredients: ['豆腐', '酱油', '白糖'] },
+    { name: '家常豆腐', ingredients: ['豆腐', '青椒', '木耳', '洋葱'] },
+    { name: '鱼香茄子', ingredients: ['茄子', '猪肉', '大葱', '大蒜', '生姜', '醋', '白糖', '番茄酱'] },
+    { name: '干煸豆角', ingredients: ['豆角', '猪肉', '辣椒'] },
+    { name: '莴笋炒肉', ingredients: ['莴笋', '猪肉'] },
+    { name: '山药排骨汤', ingredients: ['山药', '猪肉'] },
+    { name: '馄饨', ingredients: ['馄饨'] },
+    { name: '饺子', ingredients: ['饺子'] },
+    { name: '包子', ingredients: ['包子'] },
+    { name: '蛋炒饭', ingredients: ['米饭', '鸡蛋'] }
   ];
 
   const MAP = {};
@@ -266,6 +325,7 @@
 
   global.Knowledge = {
     FOODS: FOODS,
+    DISHES: DISHES,
     findFood: findFood,
     judge: judge,
     verdictLabel: verdictLabel
