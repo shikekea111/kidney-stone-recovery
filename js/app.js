@@ -587,15 +587,23 @@
   function renderEvent(ev) {
     const meta = EVT[ev.type] || { ico: '•', label: ev.type };
     const d = ev.detail || {};
-    let title = meta.label, sub = '';
+    let title = meta.label, sub = '', subHtml = '';
     if (ev.type === 'symptom') {
       title = '症状';
       sub = '尿色：' + (d.urineColor || '—') + '　疼痛：' + (d.pain || '—') + '　发热：' + (d.fever || '—');
       if (d.note) sub += '\n' + d.note;
     } else if (ev.type === 'diet') {
       title = '饮食' + (d.meal ? (' · ' + d.meal) : '');
-      sub = (d.foods || []).map(function (f) { return f.name; }).join('、');
-      if (d.note) sub += (sub ? '\n' : '') + d.note;
+      const profile = Store.getProfile();
+      const stone = profile ? profile.stoneType : 'unknown';
+      const pills = (d.foods || []).map(function (f) {
+        const food = Knowledge.findFood(f.name);
+        const j = food ? Knowledge.judge(food, stone) : null;
+        const cls = j ? j.verdict : 'unknown';
+        return '<span class="tl-food ' + cls + '" title="' + (j ? esc(j.label) : '未识别') + '">' + esc(f.name) + '</span>';
+      }).join('');
+      subHtml = '<div class="tl-foods">' + pills + '</div>';
+      if (d.note) subHtml += '<div class="tl-note">备注：' + esc(d.note) + '</div>';
     } else if (ev.type === 'water') {
       title = '饮水'; sub = (d.amount || 0) + 'ml · ' + (d.wtype || '');
     } else if (ev.type === 'med') {
@@ -604,7 +612,7 @@
     } else if (ev.type === 'note') {
       title = '备注'; sub = d.text || '';
     }
-    return '<div class="tl-item"><div class="tl-ico">' + meta.ico + '</div><div class="tl-body"><div class="tl-title">' + title + (ev.time ? (' · ' + esc(ev.time)) : '') + '</div><div class="tl-sub">' + esc(sub) + '</div></div><button class="tl-del" onclick="App.delEvent(\'' + ev.id + '\')">🗑</button></div>';
+    return '<div class="tl-item"><div class="tl-ico">' + meta.ico + '</div><div class="tl-body"><div class="tl-title">' + title + (ev.time ? (' · ' + esc(ev.time)) : '') + '</div><div class="tl-sub">' + (subHtml || esc(sub)) + '</div></div><button class="tl-del" onclick="App.delEvent(\'' + ev.id + '\')">🗑</button></div>';
   }
   function delEvent(id) {
     if (confirm('删除这条记录？')) { Store.deleteEvent(id); toast('已删除'); renderTimeline(); }

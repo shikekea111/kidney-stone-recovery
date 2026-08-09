@@ -260,6 +260,12 @@ input[type="radio"] { display: none; }
 .tl-body { flex: 1; min-width: 0; }
 .tl-title { font-weight: 700; font-size: 15px; }
 .tl-sub { font-size: 13px; color: var(--text-soft); white-space: pre-line; margin-top: 3px; line-height: 1.55; }
+.tl-foods { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.tl-food { display: inline-flex; align-items: center; font-size: 13px; font-weight: 600; padding: 4px 9px; border-radius: 8px; background: var(--ok-bg); color: var(--ok); }
+.tl-food.limit { background: var(--limit-bg); color: var(--limit); }
+.tl-food.avoid { background: var(--avoid-bg); color: var(--avoid); }
+.tl-food.unknown { background: var(--line-soft); color: var(--text-faint); }
+.tl-note { margin-top: 7px; font-size: 12px; color: var(--text-faint); }
 .tl-del { color: var(--avoid); background: none; border: none; font-size: 18px; padding: 0 4px; opacity: .7; }
 .tl-del:active { opacity: 1; }
 

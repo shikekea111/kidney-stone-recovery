@@ -15,7 +15,7 @@
     { name: '竹笋', cat: '蔬菜', ox: 'avoid', ur: 'ok', note: '草酸高且粗纤维多，建议不吃。' },
     { name: '茭白', cat: '蔬菜', ox: 'limit', ur: 'ok', note: '含草酸，适量、焯水。' },
     { name: '秋葵', cat: '蔬菜', ox: 'limit', ur: 'ok', note: '含草酸，适量。' },
-    { name: '芦笋', cat: '蔬菜', ox: 'avoid', ur: 'avoid', note: '草酸与嘌呤都高，两类结石都建议不吃。' },
+    { name: '芦笋', cat: '蔬菜', ox: 'limit', ur: 'avoid', note: '草酸含量中等偏低、草酸钙结石可适量；但嘌呤偏高，尿酸结石建议不吃。' },
     { name: '莲藕', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '低草酸、低嘌呤，可正常吃（搜"藕"也能找到）。' },
     { name: '包菜', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '低草酸、低嘌呤，卷心菜/圆白菜/甘蓝同物，可正常吃。' },
     { name: '卷心菜', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '即包菜，低草酸低嘌呤，可正常吃。' },
@@ -104,7 +104,7 @@
     { name: '花生', cat: '坚果', ox: 'avoid', ur: 'avoid', note: '草酸与嘌呤都高，建议不吃。' },
     { name: '腰果', cat: '坚果', ox: 'avoid', ur: 'limit', note: '草酸高，不吃。' },
     { name: '核桃', cat: '坚果', ox: 'limit', ur: 'limit', note: '适量。' },
-    { name: '芝麻', cat: '坚果', ox: 'avoid', ur: 'limit', note: '草酸高，不吃。' },
+    { name: '芝麻', cat: '坚果', ox: 'limit', ur: 'limit', note: '草酸中等，少量调味无妨；富含钙，对草酸钙结石有保护作用，适量即可，不宜大量。' },
     { name: '瓜子', cat: '坚果', ox: 'avoid', ur: 'limit', note: '草酸高且多盐，不吃。' },
     { name: '开心果', cat: '坚果', ox: 'limit', ur: 'limit', note: '适量。' },
 
@@ -182,7 +182,7 @@
     { name: '巧克力', cat: '零食', ox: 'avoid', ur: 'ok', note: '草酸与糖高，不吃。' },
     { name: '可可', cat: '零食', ox: 'avoid', ur: 'ok', note: '草酸高，不吃。' },
     { name: '糖果', cat: '零食', ox: 'avoid', ur: 'avoid', note: '果糖不利，不吃。' },
-    { name: '盐', cat: '调料', ox: 'avoid', ur: 'avoid', note: '高盐升尿钙，每天<5克。' },
+    { name: '盐', cat: '调料', ox: 'limit', ur: 'limit', note: '高盐会升高尿钙、增加结石风险，但盐不能不吃，建议每天限制在 5 克以内（限制而非禁忌）。' },
     { name: '酱油', cat: '调料', ox: 'limit', ur: 'limit', note: '含钠高，少放。' },
     { name: '味精', cat: '调料', ox: 'limit', ur: 'limit', note: '含钠，少放。' },
     { name: '醋', cat: '调料', ox: 'ok', ur: 'ok', note: '适量。' },
@@ -231,7 +231,9 @@
 
     // ---------- 调料（补全：菜谱常用） ----------
     { name: '白糖', cat: '调料', ox: 'ok', ur: 'ok', note: '纯糖，草酸与嘌呤均极低，两类结石均可适量；注意总体控糖。' },
-    { name: '辣椒', cat: '调料', ox: 'ok', ur: 'limit', note: '中低嘌呤，草酸钙结石可吃；尿酸结石适量。泡椒/干辣椒同属。' }
+    { name: '辣椒', cat: '调料', ox: 'ok', ur: 'limit', note: '中低嘌呤，草酸钙结石可吃；尿酸结石适量。泡椒/干辣椒同属。' },
+    { name: '芝麻酱', cat: '调料', ox: 'limit', ur: 'ok', note: '富含钙，膳食钙在肠道结合草酸、减少吸收，对草酸钙结石有保护作用，适量（如热干面一小勺）无害；但不宜过量。' },
+    { name: '榨菜', cat: '腌菜', ox: 'limit', ur: 'limit', note: '高盐腌制，含盐高，结石患者限量。萝卜干/酸豆角同属。' }
   ];
 
   // ---------- 常见菜 → 组成食材（用于菜名识别） ----------
@@ -286,7 +288,8 @@
     { name: '馄饨', ingredients: ['馄饨'] },
     { name: '饺子', ingredients: ['饺子'] },
     { name: '包子', ingredients: ['包子'] },
-    { name: '蛋炒饭', ingredients: ['米饭', '鸡蛋'] }
+    { name: '蛋炒饭', ingredients: ['米饭', '鸡蛋'] },
+    { name: '热干面', ingredients: ['面条', '芝麻酱', '榨菜', '大葱', '辣椒'] }
   ];
 
   const MAP = {};
