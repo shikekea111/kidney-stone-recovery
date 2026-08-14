@@ -127,7 +127,7 @@
         for (let i = 0; i < nodes.length; i++) {
           const n = nodes[i];
           if (ds < n && ds > n - 14) {
-            out.push({ level: 'info', title: '复查提醒', text: '建议在术后第 ' + n + ' 天左右复查（如尿常规、B超/CT），评估恢复与有无残留或复发。请遵主刀医生安排。' });
+            out.push({ level: 'info', title: '复查提醒', text: '术后约 ' + n + ' 天，建议复查（如尿常规、B超/CT），评估恢复与有无残留或复发。请遵主刀医生安排。' });
             break;
           }
         }
@@ -172,27 +172,30 @@
       };
     }
 
-    // 饮水联动：先算当天饮水合计，作为评分正向因素（达标最多 +15，超额不额外加分防刷分）
-    const waterEvents = timeline.filter(function (e) {
-      return e.type === 'water' && e.date === today;
-    });
+    // 饮水完成情况
+    const goal = (profile && profile.waterGoal) || 2000;
+    const waterEvents = timeline.filter(function (e) { return e.type === 'water' && e.date === today; });
     let wtotal = 0;
     waterEvents.forEach(function (e) { wtotal += Number((e.detail && e.detail.amount) || 0); });
-    const waterGoal = (profile && profile.waterGoal) || 2000;
-    const waterPct = waterGoal > 0 ? wtotal / waterGoal : 0;
-    const waterBonus = Math.round(Math.min(waterPct, 1) * 15);
 
-    // 评分：基础分 + 可吃加分 + 适量加分 + 饮水加分 - 忌口扣分，限制在 0~100
-    let raw = 50;
-    raw += ok.length * 12;
-    raw += limit.length * 6;
-    raw -= avoid.length * 25;
-    raw += waterBonus;
-    let score = Math.max(0, Math.min(100, raw));
-    // 有忌口食物时不允许满分：最高压到 89（不超过「良好」上限），但饮水达标可拉到接近良好上限
-    if (avoid.length) {
-      score = Math.min(score, 89);
+    // 食物分：基础分 + 可吃加分 + 适量加分 - 忌口扣分
+    let foodRaw = 50;
+    foodRaw += ok.length * 12;
+    foodRaw += limit.length * 6;
+    foodRaw -= avoid.length * 22;
+    let foodScore = Math.max(0, Math.min(100, foodRaw));
+    // 有忌口时，食物部分不应给满分
+    if (avoid.length && foodScore > 89) foodScore = 89;
+
+    // 饮水分：按完成率 0~100
+    let waterScore = 0;
+    if (goal > 0) {
+      waterScore = Math.max(0, Math.min(100, Math.round((wtotal / goal) * 100)));
     }
+
+    // 综合评分：食物 75% + 饮水 25%（饮水是防复发关键，必须实质影响总分）
+    let score = Math.round(foodScore * 0.75 + waterScore * 0.25);
+    score = Math.max(0, Math.min(100, score));
 
     let level, levelText;
     if (score >= 85) { level = 'good'; levelText = '优秀'; }
@@ -200,7 +203,7 @@
     else if (score >= 50) { level = 'info'; levelText = '一般'; }
     else { level = 'warn'; levelText = '需改进'; }
 
-    let analysis = '今天共记录 ' + total + ' 种食物：' + ok.length + ' 种可吃、' + limit.length + ' 种适量、' + avoid.length + ' 种忌口。';
+    let analysis = '今天共记录 ' + total + ' 种食物：' + ok.length + ' 种可吃、' + limit.length + ' 种适量、' + avoid.length + ' 种忌口；饮水 ' + wtotal + 'ml / 目标 ' + goal + 'ml。';
     if (stoneType === 'unknown') {
       analysis += '（结石成分未明确，评分暂按草酸钙结石常见类型参考，确诊后更准）';
     }
@@ -211,28 +214,26 @@
       suggestions.push('今天有 ' + avoid.length + ' 种忌口食物（' + names + '）。草酸钙结石应尽量不吃或少吃高草酸/高盐食物；下次可先到「能吃什么」查询更合适的替代。');
     }
     if (limit.length) {
-      const names = limit.map(function (i) { return i.name; }).join('、');
-      suggestions.push('今天有 ' + limit.length + ' 种「适量」食物（' + names + '）。建议控制分量，不要一次吃太多，尤其是豆制品、部分水产或高蛋白类。');
+      suggestions.push(limit.length + ' 种属于「适量」类（如奶类、豆制品、部分水产），建议控制分量，不要一次吃太多。');
     }
-    if (!avoid.length && ok.length) {
-      suggestions.push('今天饮食整体对结石友好，继续保持！注意搭配均衡、不过量，并配合每日饮水目标。');
+    if (!avoid.length && ok.length && wtotal >= goal) {
+      suggestions.push('今天饮食与饮水都达标，继续保持！');
+    } else if (!avoid.length && ok.length) {
+      suggestions.push('今天饮食整体对结石友好，但饮水未达标，记得少量多次补充水分。');
     }
     if (total <= 2) {
       suggestions.push('目前记录的食物较少，评分仅供参考。建议把三餐都记上，结果会更准。');
     }
-    // 饮水反馈（waterEvents/wtotal/waterGoal/waterPct 已在上方算好）
     if (!waterEvents.length) {
-      suggestions.push('今天还没记饮水。充足饮水是防复发的关键，记得补记（目标 ' + waterGoal + 'ml）。');
-    } else if (waterPct >= 1) {
-      suggestions.push('今日饮水已达标（' + wtotal + '/' + waterGoal + 'ml），很好，有助于冲刷尿路、减少结石复发。');
-    } else {
-      suggestions.push('今日饮水 ' + wtotal + '/' + waterGoal + 'ml（约 ' + Math.round(waterPct * 100) + '%），还差一些，尽量多喝点。');
+      suggestions.push('今天还没记饮水。充足饮水是防复发的关键，记得补记（目标 ' + goal + 'ml）。');
+    } else if (wtotal < goal) {
+      suggestions.push('今日饮水 ' + wtotal + 'ml，距离目标 ' + goal + 'ml 还差 ' + (goal - wtotal) + 'ml。饮水不足会显著增加结石复发风险，建议少量多次补充。');
     }
 
     return {
       date: today, empty: false, score: score, level: level, levelText: levelText,
       total: total, ok: ok.length, limit: limit.length, avoid: avoid.length,
-      avoidList: avoid, limitList: limit, analysis: analysis, suggestions: suggestions
+      avoidList: avoid, analysis: analysis, suggestions: suggestions
     };
   }
 
