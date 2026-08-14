@@ -214,7 +214,8 @@
       suggestions.push('今天有 ' + avoid.length + ' 种忌口食物（' + names + '）。草酸钙结石应尽量不吃或少吃高草酸/高盐食物；下次可先到「能吃什么」查询更合适的替代。');
     }
     if (limit.length) {
-      suggestions.push(limit.length + ' 种属于「适量」类（如奶类、豆制品、部分水产），建议控制分量，不要一次吃太多。');
+      const names = limit.map(function (i) { return i.name; }).join('、');
+      suggestions.push(limit.length + ' 种属于「适量」类（' + names + '），建议控制分量，不要一次吃太多。');
     }
     if (!avoid.length && ok.length && wtotal >= goal) {
       suggestions.push('今天饮食与饮水都达标，继续保持！');
