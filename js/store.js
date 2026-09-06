@@ -27,8 +27,17 @@
 
   // ---------- Profile ----------
   function getProfile() {
-    try { return JSON.parse(localStorage.getItem(LS_PROFILE)) || null; }
-    catch (e) { return null; }
+    let p = null;
+    try { p = JSON.parse(localStorage.getItem(LS_PROFILE)) || null; } catch (e) { p = null; }
+    // 迁移：旧版只有 stoneType 的档案，自动转为多病种 conditions 数组（老数据不丢）
+    if (p && !Array.isArray(p.conditions) && p.stoneType) {
+      p.conditions = [{
+        id: 'kidney_stone', stoneType: p.stoneType, surgeryDate: p.surgeryDate,
+        surgeryType: p.surgeryType, affectedSide: p.affectedSide, stage: 'post_surgery'
+      }];
+      saveProfile(p);
+    }
+    return p;
   }
   function saveProfile(p) {
     localStorage.setItem(LS_PROFILE, JSON.stringify(p));

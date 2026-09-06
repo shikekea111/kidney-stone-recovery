@@ -1,7 +1,7 @@
 {
-  "name": "肾石康复助手",
-  "short_name": "肾石助手",
-  "description": "专属肾结石康复管理：时间线、饮食查询、检查报告、智能建议",
+  "name": "能吃吗 · 多病种饮食宜忌助手",
+  "short_name": "能吃吗",
+  "description": "多病种饮食宜忌助手：肾结石、智齿发炎等常见病的能吃/忌口查询、时间线与智能建议",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",

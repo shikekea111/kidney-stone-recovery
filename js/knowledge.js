@@ -15,7 +15,7 @@
     { name: '竹笋', cat: '蔬菜', ox: 'avoid', ur: 'ok', note: '草酸高且粗纤维多，建议不吃。' },
     { name: '茭白', cat: '蔬菜', ox: 'limit', ur: 'ok', note: '含草酸，适量、焯水。' },
     { name: '秋葵', cat: '蔬菜', ox: 'limit', ur: 'ok', note: '含草酸，适量。' },
-    { name: '芦笋', cat: '蔬菜', ox: 'limit', ur: 'avoid', note: '草酸含量中等偏低、草酸钙结石可适量；但嘌呤偏高，尿酸结石建议不吃。' },
+    { name: '芦笋', cat: '蔬菜', ox: 'avoid', ur: 'avoid', note: '草酸与嘌呤都高，两类结石都建议不吃。' },
     { name: '莲藕', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '低草酸、低嘌呤，可正常吃（搜"藕"也能找到）。' },
     { name: '包菜', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '低草酸、低嘌呤，卷心菜/圆白菜/甘蓝同物，可正常吃。' },
     { name: '卷心菜', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '即包菜，低草酸低嘌呤，可正常吃。' },
@@ -85,8 +85,8 @@
     { name: '柚子', cat: '水果', ox: 'ok', ur: 'ok', note: '适量。' },
     { name: '苹果', cat: '水果', ox: 'ok', ur: 'ok', note: '可吃。' },
     { name: '梨', cat: '水果', ox: 'ok', ur: 'ok', note: '可吃。' },
-    { name: '葡萄', cat: '水果', ox: 'ok', ur: 'ok', note: '含果糖，尿酸结石适量；糖分不低。' },
-    { name: '西瓜', cat: '水果', ox: 'ok', ur: 'ok', note: '利尿、水分高，适量；糖分不低，尿酸结石与糖友注意。' },
+    { name: '葡萄', cat: '水果', ox: 'ok', ur: 'ok', note: '适量。' },
+    { name: '西瓜', cat: '水果', ox: 'ok', ur: 'ok', note: '利尿，适量（糖友注意）。' },
     { name: '草莓', cat: '水果', ox: 'limit', ur: 'ok', note: '含草酸，适量。' },
     { name: '猕猴桃', cat: '水果', ox: 'limit', ur: 'ok', note: '含草酸与维C，适量。' },
     { name: '蓝莓', cat: '水果', ox: 'ok', ur: 'ok', note: '适量，抗氧化。' },
@@ -94,29 +94,17 @@
     { name: '樱桃', cat: '水果', ox: 'ok', ur: 'ok', note: '对痛风友好，适量。' },
     { name: '石榴', cat: '水果', ox: 'limit', ur: 'ok', note: '含草酸，适量。' },
     { name: '杨梅', cat: '水果', ox: 'limit', ur: 'ok', note: '含草酸，适量。' },
-    { name: '芒果', cat: '水果', ox: 'ok', ur: 'ok', note: '适量；含果糖，尿酸结石注意。' },
+    { name: '芒果', cat: '水果', ox: 'ok', ur: 'ok', note: '适量。' },
     { name: '菠萝', cat: '水果', ox: 'ok', ur: 'ok', note: '适量。' },
-    { name: '荔枝', cat: '水果', ox: 'limit', ur: 'limit', note: '糖分与果糖高，升尿酸，适量；尿酸结石尤需注意。' },
+    { name: '荔枝', cat: '水果', ox: 'limit', ur: 'limit', note: '糖分高，适量。' },
     { name: '柿子', cat: '水果', ox: 'limit', ur: 'ok', note: '含鞣酸，适量。' },
-    { name: '火龙果', cat: '水果', ox: 'ok', ur: 'ok', note: '低草酸、水分高，可正常吃；富含膳食纤维。' },
-    { name: '杨桃', cat: '水果', ox: 'avoid', ur: 'ok', note: '含草酸，且含神经毒素 caramboxin；肾结石或肾功能异常者禁用，可能引发顽固打嗝、抽搐，严重者危险。' },
-    { name: '桃子', cat: '水果', ox: 'ok', ur: 'ok', note: '可吃，适量。' },
-    { name: '哈密瓜', cat: '水果', ox: 'ok', ur: 'ok', note: '水分多，适量。' },
-    { name: '木瓜', cat: '水果', ox: 'ok', ur: 'ok', note: '可吃。' },
-    { name: '椰子', cat: '水果', ox: 'ok', ur: 'limit', note: '椰肉脂肪与嘌呤中等，尿酸结石适量；椰子水富含钾，肾功能异常者注意。' },
-    { name: '山楂', cat: '水果', ox: 'limit', ur: 'ok', note: '含草酸与鞣酸，适量；开胃助消化。' },
-    { name: '李子', cat: '水果', ox: 'ok', ur: 'ok', note: '适量。' },
-    { name: '杏', cat: '水果', ox: 'ok', ur: 'ok', note: '适量，果仁有毒勿食。' },
-    { name: '枣', cat: '水果', ox: 'ok', ur: 'ok', note: '红枣适量，糖分不低。' },
-    { name: '无花果', cat: '水果', ox: 'limit', ur: 'ok', note: '含草酸，适量。' },
-    { name: '龙眼', cat: '水果', ox: 'limit', ur: 'limit', note: '糖分与果糖高，升尿酸，适量；尿酸结石尤需注意。' },
 
     // ---------- 坚果种子 ----------
     { name: '杏仁', cat: '坚果', ox: 'avoid', ur: 'limit', note: '草酸高，草酸钙结石不吃。' },
     { name: '花生', cat: '坚果', ox: 'avoid', ur: 'avoid', note: '草酸与嘌呤都高，建议不吃。' },
     { name: '腰果', cat: '坚果', ox: 'avoid', ur: 'limit', note: '草酸高，不吃。' },
     { name: '核桃', cat: '坚果', ox: 'limit', ur: 'limit', note: '适量。' },
-    { name: '芝麻', cat: '坚果', ox: 'limit', ur: 'limit', note: '草酸中等，少量调味无妨；富含钙，对草酸钙结石有保护作用，适量即可，不宜大量。' },
+    { name: '芝麻', cat: '坚果', ox: 'avoid', ur: 'limit', note: '草酸高，不吃。' },
     { name: '瓜子', cat: '坚果', ox: 'avoid', ur: 'limit', note: '草酸高且多盐，不吃。' },
     { name: '开心果', cat: '坚果', ox: 'limit', ur: 'limit', note: '适量。' },
 
@@ -194,7 +182,7 @@
     { name: '巧克力', cat: '零食', ox: 'avoid', ur: 'ok', note: '草酸与糖高，不吃。' },
     { name: '可可', cat: '零食', ox: 'avoid', ur: 'ok', note: '草酸高，不吃。' },
     { name: '糖果', cat: '零食', ox: 'avoid', ur: 'avoid', note: '果糖不利，不吃。' },
-    { name: '盐', cat: '调料', ox: 'limit', ur: 'limit', note: '高盐会升高尿钙、增加结石风险，但盐不能不吃，建议每天限制在 5 克以内（限制而非禁忌）。' },
+    { name: '盐', cat: '调料', ox: 'avoid', ur: 'avoid', note: '高盐升尿钙，每天<5克。' },
     { name: '酱油', cat: '调料', ox: 'limit', ur: 'limit', note: '含钠高，少放。' },
     { name: '味精', cat: '调料', ox: 'limit', ur: 'limit', note: '含钠，少放。' },
     { name: '醋', cat: '调料', ox: 'ok', ur: 'ok', note: '适量。' },
@@ -239,80 +227,115 @@
     // ---------- 草药茶饮 ----------
     { name: '金钱草', cat: '草药茶', ox: 'ok', ur: 'ok', note: '传统利尿排石，适量泡水（遵医嘱）。' },
     { name: '玉米须', cat: '草药茶', ox: 'ok', ur: 'ok', note: '利尿，适量。' },
-    { name: '车前草', cat: '草药茶', ox: 'ok', ur: 'ok', note: '利尿，适量（遵医嘱）。' },
-
-    // ---------- 调料（补全：菜谱常用） ----------
-    { name: '白糖', cat: '调料', ox: 'ok', ur: 'ok', note: '纯糖，草酸与嘌呤均极低，两类结石均可适量；注意总体控糖。' },
-    { name: '辣椒', cat: '调料', ox: 'ok', ur: 'limit', note: '中低嘌呤，草酸钙结石可吃；尿酸结石适量。泡椒/干辣椒同属。' },
-    { name: '芝麻酱', cat: '调料', ox: 'limit', ur: 'ok', note: '富含钙，膳食钙在肠道结合草酸、减少吸收，对草酸钙结石有保护作用，适量（如热干面一小勺）无害；但不宜过量。' },
-    { name: '榨菜', cat: '腌菜', ox: 'limit', ur: 'limit', note: '高盐腌制，含盐高，结石患者限量。萝卜干/酸豆角同属。' }
+    { name: '车前草', cat: '草药茶', ox: 'ok', ur: 'ok', note: '利尿，适量（遵医嘱）。' }
   ];
 
-  // ---------- 常见菜 → 组成食材（用于菜名识别） ----------
-  // ingredients 只引用 FOODS 中已有的 name；调料类(糖/辣椒)已补全。
-  const DISHES = [
-    { name: '鱼香肉丝', ingredients: ['猪肉', '木耳', '胡萝卜', '青椒', '竹笋', '大葱', '大蒜', '生姜', '醋', '番茄酱'] },
-    { name: '宫保鸡丁', ingredients: ['鸡肉', '花生', '黄瓜', '胡萝卜', '大葱'] },
-    { name: '番茄炒蛋', ingredients: ['番茄', '鸡蛋'] },
-    { name: '青椒肉丝', ingredients: ['青椒', '猪肉'] },
-    { name: '麻婆豆腐', ingredients: ['豆腐', '猪肉', '大葱'] },
-    { name: '青椒土豆丝', ingredients: ['青椒', '土豆'] },
-    { name: '酸辣土豆丝', ingredients: ['土豆', '辣椒', '醋'] },
-    { name: '红烧肉', ingredients: ['猪肉', '白糖', '生姜'] },
-    { name: '糖醋里脊', ingredients: ['猪肉', '白糖', '番茄酱'] },
-    { name: '回锅肉', ingredients: ['猪肉', '青椒', '洋葱', '蒜苗'] },
-    { name: '小炒肉', ingredients: ['猪肉', '青椒', '大蒜', '生姜'] },
-    { name: '红烧茄子', ingredients: ['茄子', '猪肉', '大蒜', '生姜'] },
-    { name: '地三鲜', ingredients: ['茄子', '土豆', '青椒'] },
-    { name: '木须肉', ingredients: ['猪肉', '木耳', '黄瓜', '鸡蛋'] },
-    { name: '番茄鸡蛋汤', ingredients: ['番茄', '鸡蛋'] },
-    { name: '紫菜蛋花汤', ingredients: ['紫菜', '鸡蛋'] },
-    { name: '冬瓜排骨汤', ingredients: ['冬瓜', '猪肉'] },
-    { name: '菠菜豆腐汤', ingredients: ['菠菜', '豆腐'] },
-    { name: '黄瓜炒鸡蛋', ingredients: ['黄瓜', '鸡蛋'] },
-    { name: '韭菜炒鸡蛋', ingredients: ['韭菜', '鸡蛋'] },
-    { name: '芹菜炒香干', ingredients: ['芹菜', '豆腐干'] },
-    { name: '蒜蓉西兰花', ingredients: ['西兰花', '大蒜'] },
-    { name: '蚝油生菜', ingredients: ['生菜', '大蒜'] },
-    { name: '香菇油菜', ingredients: ['香菇', '白菜'] },
-    { name: '清炒时蔬', ingredients: ['白菜', '胡萝卜', '木耳'] },
-    { name: '土豆炖牛肉', ingredients: ['土豆', '牛肉', '胡萝卜'] },
-    { name: '萝卜炖排骨', ingredients: ['白萝卜', '猪肉'] },
-    { name: '可乐鸡翅', ingredients: ['鸡肉', '可乐'] },
-    { name: '清蒸鱼', ingredients: ['鱼肉', '大葱', '生姜'] },
-    { name: '酸菜鱼', ingredients: ['鱼肉', '辣椒', '豆芽', '白菜'] },
-    { name: '水煮肉片', ingredients: ['猪肉', '辣椒', '白菜', '豆芽'] },
-    { name: '蚂蚁上树', ingredients: ['猪肉', '大葱', '酱油'] },
-    { name: '尖椒土豆丝', ingredients: ['辣椒', '土豆'] },
-    { name: '凉拌黄瓜', ingredients: ['黄瓜', '大蒜', '醋'] },
-    { name: '拍黄瓜', ingredients: ['黄瓜', '大蒜', '醋'] },
-    { name: '西兰花炒虾仁', ingredients: ['西兰花', '虾'] },
-    { name: '虾仁蒸蛋', ingredients: ['虾', '鸡蛋'] },
-    { name: '鸡蛋羹', ingredients: ['鸡蛋'] },
-    { name: '小米粥', ingredients: ['小米粥'] },
-    { name: '皮蛋瘦肉粥', ingredients: ['皮蛋', '猪肉', '米饭'] },
-    { name: '红烧豆腐', ingredients: ['豆腐', '酱油', '白糖'] },
-    { name: '家常豆腐', ingredients: ['豆腐', '青椒', '木耳', '洋葱'] },
-    { name: '鱼香茄子', ingredients: ['茄子', '猪肉', '大葱', '大蒜', '生姜', '醋', '白糖', '番茄酱'] },
-    { name: '干煸豆角', ingredients: ['豆角', '猪肉', '辣椒'] },
-    { name: '莴笋炒肉', ingredients: ['莴笋', '猪肉'] },
-    { name: '山药排骨汤', ingredients: ['山药', '猪肉'] },
-    { name: '馄饨', ingredients: ['馄饨'] },
-    { name: '饺子', ingredients: ['饺子'] },
-    { name: '包子', ingredients: ['包子'] },
-    { name: '蛋炒饭', ingredients: ['米饭', '鸡蛋'] },
-    { name: '热干面', ingredients: ['面条', '芝麻酱', '榨菜', '大葱', '辣椒'] }
+  // ===== 新增食物（智齿等场景需要，原库未含） =====
+  const EXTRA_FOODS = [
+    { name: '辣椒', cat: '调料', ox: 'ok', ur: 'ok', note: '辛辣，智齿发炎期忌口。' },
+    { name: '花椒', cat: '调料', ox: 'ok', ur: 'ok', note: '辛辣麻舌，发炎期忌口。' },
+    { name: '芥末', cat: '调料', ox: 'ok', ur: 'ok', note: '辛辣刺激，发炎期忌口。' },
+    { name: '咖喱', cat: '调料', ox: 'limit', ur: 'limit', note: '含多种香辛料偏辛辣，发炎期适量。' },
+    { name: '薯片', cat: '零食', ox: 'avoid', ur: 'avoid', note: '高盐油炸且酥脆，肾结石与智齿都忌。' },
+    { name: '锅巴', cat: '主食', ox: 'avoid', ur: 'avoid', note: '酥脆坚硬易嵌牙，发炎期忌。' },
+    { name: '糯米糍', cat: '零食', ox: 'limit', ur: 'limit', note: '黏性大残渣难清，发炎期忌。' },
+    { name: '软糖', cat: '零食', ox: 'avoid', ur: 'avoid', note: '黏性高糖，发炎期忌。' },
+    { name: '冰块', cat: '饮品', ox: 'ok', ur: 'ok', note: '坚硬，咀嚼易刺激患处，发炎期忌。' },
+    { name: '牛肉干', cat: '肉蛋奶', ox: 'limit', ur: 'avoid', note: '坚硬难嚼粗纤维，发炎期忌。' },
+    { name: '汉堡', cat: '主食', ox: 'limit', ur: 'limit', note: '需大张口咀嚼，发炎期切小块适量。' },
+    { name: '蒸蛋', cat: '肉蛋奶', ox: 'ok', ur: 'ok', note: '软嫩易消化，发炎期适宜。' },
+    { name: '鸡蛋羹', cat: '肉蛋奶', ox: 'ok', ur: 'ok', note: '温软，发炎期适宜。' },
+    { name: '土豆泥', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '软烂，发炎期适宜。' },
+    { name: '南瓜糊', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '软烂温凉，发炎期适宜。' },
+    { name: '燕麦粥', cat: '主食', ox: 'limit', ur: 'ok', note: '温软，适量。' }
   ];
+
+  // ===== 食物属性标签：用于智齿等按"物理/刺激属性"判定（与肾结石的化学维度 ox/ur 解耦） =====
+  // hard 坚硬需嚼 / crispy 酥脆碎渣 / sticky 黏 / spicy 辛辣 / coarse 粗纤维需大张口 / acidic 过酸 / sugar 高糖 / alcohol 含酒精
+  const FOOD_TAGS = {
+    '花生': ['hard'], '瓜子': ['hard'], '核桃': ['hard'], '杏仁': ['hard'], '腰果': ['hard'], '芝麻': ['hard'], '冰块': ['hard'],
+    '薯片': ['crispy'], '锅巴': ['crispy', 'hard'], '饼干': ['crispy', 'sugar'], '油条': ['crispy'],
+    '年糕': ['sticky'], '汤圆': ['sticky'], '糯米糍': ['sticky'], '软糖': ['sticky', 'sugar'], '糖果': ['sticky', 'sugar'],
+    '辣椒': ['spicy'], '花椒': ['spicy'], '芥末': ['spicy'], '咖喱': ['spicy'],
+    '竹笋': ['coarse'], '芹菜': ['coarse'], '玉米': ['coarse'], '苹果': ['coarse'], '牛肉': ['coarse'], '牛肉干': ['hard', 'coarse'], '汉堡': ['coarse'],
+    '柠檬': ['acidic'], '橘子': ['acidic'], '橙子': ['acidic'], '醋': ['acidic'], '番茄': ['acidic'],
+    '巧克力': ['sugar'], '可乐': ['sugar'], '果汁': ['sugar'], '蛋糕': ['sugar'], '荔枝': ['sugar'], '西瓜': ['sugar'],
+    '啤酒': ['alcohol'], '白酒': ['alcohol'], '黄酒': ['alcohol']
+  };
+
+  // ===== 多病种规则引擎 =====
+  // 每个病种提供 judge(food, cond) -> {verdict, note, hardWarn?}
+  // 合并原则：取所有病种中最严格（avoid > limit > ok），并记录每条原因（标注来源病种）
+  const CONDITIONS = {
+    kidney_stone: {
+      id: 'kidney_stone', name: '肾结石', icon: '🪨',
+      judge: function (food, cond) {
+        const t = (cond && cond.stoneType) || 'unknown';
+        const v = (t === 'uric') ? food.ur : food.ox;
+        let note = food.note;
+        if (!t || t === 'unknown') note = '（结石成分未明确，暂按草酸钙结石参考；确诊后更准）' + note;
+        return { verdict: v, note: note };
+      }
+    },
+    wisdom_tooth: {
+      id: 'wisdom_tooth', name: '智齿发炎', icon: '🦷',
+      stages: {
+        inflammation: { name: '发炎期', avoid: ['hard', 'crispy', 'sticky', 'spicy', 'coarse', 'alcohol'], limit: ['acidic', 'sugar'],
+          avoidNote: '坚硬、酥脆、黏性食物会刺激发炎牙龈、嵌塞盲袋，加重肿胀疼痛；辛辣与酒精直接刺激创面。',
+          limitNote: '过酸、过甜会刺激创面，建议放温凉、少量。' },
+        post_extraction: { name: '拔牙后', avoid: ['hard', 'crispy', 'sticky', 'spicy', 'coarse', 'alcohol', 'hot'], limit: ['acidic', 'sugar'],
+          avoidNote: '拔牙后 24 小时内忌热食、忌用吸管、忌过硬食物，防止血凝块脱落（干槽症）；辛辣酒精同样禁忌。',
+          limitNote: '以温凉软食为主，过酸过甜暂缓。' },
+        recovery: { name: '恢复期', avoid: ['hard', 'crispy', 'sticky', 'spicy', 'alcohol'], limit: ['coarse', 'sugar'],
+          avoidNote: '伤口未完全愈合前仍忌坚硬、辛辣与酒精。',
+          limitNote: '可逐步恢复正常饮食，粗纤维与甜食用量适度。' }
+      },
+      judge: function (food, cond) {
+        const stage = (cond && cond.stage) || 'inflammation';
+        const rules = CONDITIONS.wisdom_tooth.stages[stage] || CONDITIONS.wisdom_tooth.stages.inflammation;
+        const tags = FOODS_TAGS_SAFE(food.name);
+        // 用药红线：服甲硝唑/头孢期间严禁饮酒（双硫仑样反应）
+        if (cond && cond.meds && cond.meds.length && tags.indexOf('alcohol') >= 0) {
+          return { verdict: 'avoid', hardWarn: true,
+            note: '你正在服用消炎药（' + cond.meds.join('、') + '），严禁饮酒：酒精会引发双硫仑样反应，严重可致命。' };
+        }
+        if (tags.indexOf('alcohol') >= 0) return { verdict: 'avoid', note: rules.avoidNote + '（含酒精）' };
+        if (arrIntersect(tags, rules.avoid)) return { verdict: 'avoid', note: rules.avoidNote };
+        if (arrIntersect(tags, rules.limit)) return { verdict: 'limit', note: rules.limitNote };
+        return { verdict: 'ok', note: '' };
+      }
+    }
+  };
+
+  function FOODS_TAGS_SAFE(name) { return FOOD_TAGS[name] || []; }
+
+  const ALL_FOODS = FOODS.concat(EXTRA_FOODS);
+
+  function arrIntersect(a, b) {
+    for (let i = 0; i < a.length; i++) { if (b.indexOf(a[i]) >= 0) return true; }
+    return false;
+  }
+
+  // 从档案取出病种数组（兼容旧版单结石类型）
+  function getConditions(profile) {
+    if (!profile) return [];
+    if (Array.isArray(profile.conditions) && profile.conditions.length) return profile.conditions;
+    if (profile.stoneType) {
+      return [{ id: 'kidney_stone', stoneType: profile.stoneType, surgeryDate: profile.surgeryDate,
+        surgeryType: profile.surgeryType, affectedSide: profile.affectedSide, stage: 'post_surgery' }];
+    }
+    return [];
+  }
 
   const MAP = {};
-  FOODS.forEach(function (f) { MAP[f.name] = f; });
+  ALL_FOODS.forEach(function (f) { MAP[f.name] = f; });
 
   function findFood(name) {
     if (!name) return null;
     const n = String(name).trim();
     if (MAP[n]) return MAP[n];
     // 包含匹配
-    const hit = FOODS.find(function (f) {
+    const hit = ALL_FOODS.find(function (f) {
       return f.name.indexOf(n) >= 0 || n.indexOf(f.name) >= 0;
     });
     return hit || null;
@@ -325,24 +348,55 @@
     return '—';
   }
 
-  // 根据结石类型返回对某食物的判定
-  function judge(food, stoneType) {
+  // 合并判定：传入病种数组（conditions）或兼容旧版单结石类型字符串
+  // 返回 { verdict, label, reasons:[{condition,conditionName,stage,stageName,verdict,note,hardWarn}], note, name, cat }
+  function judge(food, ctx) {
     if (!food) return null;
-    let v;
-    if (stoneType === 'uric') v = food.ur;
-    else v = food.ox; // calcium 或 unknown 默认按草酸钙（最常见）参考
-    let note = food.note;
-    if (!stoneType || stoneType === 'unknown') {
-      note = '（结石类型未填，暂按草酸钙结石参考；确诊后更准确）' + note;
+    let conditions = ctx;
+    if (typeof ctx === 'string') {
+      conditions = ctx ? [{ id: 'kidney_stone', stoneType: ctx }] : [];
     }
-    return { verdict: v, label: verdictLabel(v), note: note, name: food.name, cat: food.cat };
+    conditions = conditions || [];
+    const order = { ok: 0, limit: 1, avoid: 2 };
+    let worst = 'ok';
+    const reasons = [];
+    // 第一遍：取最严格判定
+    conditions.forEach(function (cond) {
+      const def = CONDITIONS[cond.id];
+      if (!def) return;
+      const r = def.judge(food, cond) || { verdict: 'ok' };
+      if (order[r.verdict] > order[worst]) worst = r.verdict;
+    });
+    // 第二遍：只记录与最严判定一致的原因，避免把"适量"等较弱原因一并列出造成歧义
+    conditions.forEach(function (cond) {
+      const def = CONDITIONS[cond.id];
+      if (!def) return;
+      const r = def.judge(food, cond) || { verdict: 'ok' };
+      if (r.verdict === worst && r.verdict !== 'ok') {
+        reasons.push({
+          condition: cond.id,
+          conditionName: def.name,
+          stage: cond.stage,
+          stageName: (def.stages && def.stages[cond.stage]) ? def.stages[cond.stage].name : '',
+          verdict: r.verdict,
+          note: r.note,
+          hardWarn: !!r.hardWarn
+        });
+      }
+    });
+    let note = food.note;
+    if (!conditions.length) note = '（未选择病种，暂按通用参考）' + note;
+    return { verdict: worst, label: verdictLabel(worst), reasons: reasons, note: note, name: food.name, cat: food.cat };
   }
 
   global.Knowledge = {
-    FOODS: FOODS,
-    DISHES: DISHES,
+    FOODS: ALL_FOODS,
+    EXTRA_FOODS: EXTRA_FOODS,
+    FOOD_TAGS: FOOD_TAGS,
+    CONDITIONS: CONDITIONS,
     findFood: findFood,
     judge: judge,
+    getConditions: getConditions,
     verdictLabel: verdictLabel
   };
 })(window);

@@ -40,6 +40,19 @@
     const el = document.querySelector('#modalRoot input[name="' + name + '"]:checked');
     return el ? el.value : '';
   }
+  function checkedValues(name) {
+    const els = document.querySelectorAll('#modalRoot input[name="' + name + '"]:checked');
+    const out = [];
+    els.forEach(function (el) { if (el.value) out.push(el.value); });
+    return out;
+  }
+  function toggleCondFields() {
+    const vals = checkedValues('cond');
+    const kf = document.getElementById('kidney_fields');
+    const tf = document.getElementById('tooth_fields');
+    if (kf) kf.style.display = (vals.indexOf('kidney_stone') >= 0) ? '' : 'none';
+    if (tf) tf.style.display = (vals.indexOf('wisdom_tooth') >= 0) ? '' : 'none';
+  }
   function field(label, control) { return '<div class="field"><label>' + label + '</label>' + control + '</div>'; }
   function chips(name, arr, sel) {
     return arr.map(function (v) {
@@ -88,7 +101,7 @@
   function go(tab) {
     currentTab = tab;
     $$('.tab').forEach(function (t) { t.classList.toggle('active', t.dataset.tab === tab); });
-    pageTitle.textContent = TITLES[tab] || '肾石康复助手';
+    pageTitle.textContent = TITLES[tab] || '能吃吗';
     render();
     window.scrollTo(0, 0);
   }
@@ -106,52 +119,35 @@
     const tl = Store.getTimeline();
     const rp = Store.getReports();
     const adv = Advice.buildAdvice(p, tl, rp);
-
-    // —— 仪表盘数据 ——
-    const ds = (p && p.surgeryDate) ? Advice.daysSince(p.surgeryDate) : null;
-    const goal = (p && p.waterGoal) || 2000;
-    const tStr = Store.todayStr();
-    let waterTotal = 0;
-    tl.forEach(function (e) {
-      if (e.type === 'water' && e.date === tStr) waterTotal += Number((e.detail && e.detail.amount) || 0);
-    });
-    const waterPct = Math.min(100, Math.round(waterTotal / goal * 100));
-    const name = (p && p.name) ? p.name : '';
-    const nowD = new Date();
-    const dateStr = (nowD.getMonth() + 1) + '月' + nowD.getDate() + '日';
-
-    // 问候语与阶段文案
-    let greet = name ? ('你好，' + name) : '你好';
-    let sub;
-    if (!p) sub = '完善个人档案，获得专属康复建议';
-    else if (ds === null) sub = '记得到「我的」填写手术日期';
-    else if (ds < 0) sub = '手术日期待确认，请核对档案';
-    else if (ds <= 7) sub = '术后急性恢复期 · 多休息、多喝水';
-    else if (ds <= 30) sub = '恢复早期 · 逐步活动，避免剧烈';
-    else if (ds <= 90) sub = '恢复中期 · 重点预防复发';
-    else sub = '长期管理期 · 坚持饮水与复查';
-
-    // 术后天数显示
-    let dayNum, dayUnit = '', dayLbl = '术后天数';
-    if (ds !== null && ds >= 0) { dayNum = ds; dayUnit = '天'; dayLbl = '术后第几天'; }
-    else { dayNum = '—'; }
-
+    let summary = '尚未填写个人档案，建议到「我的」选择病种并完善信息。';
+    if (p) {
+      const conds = Knowledge.getConditions(p);
+      if (conds.length) {
+        const parts = conds.map(function (c) {
+          if (c.id === 'kidney_stone') {
+            const ds = Advice.daysSince(c.surgeryDate);
+            return '肾结石（' + stoneLabel(c.stoneType) + (ds !== null && ds >= 0 ? ' · 术后第' + ds + '天' : '') + '）';
+          }
+          if (c.id === 'wisdom_tooth') {
+            const st = (Knowledge.CONDITIONS.wisdom_tooth.stages[c.stage] || {}).name || '发炎期';
+            return '智齿发炎（' + st + (c.meds && c.meds.length ? ' · 服消炎药' : '') + '）';
+          }
+          return c.id;
+        });
+        summary = parts.join('　·　') + '　·　饮水目标 ' + (p.waterGoal || 2000) + 'ml/天';
+      } else {
+        summary = '已填部分信息，但未选择病种，建议到「我的」勾选（肾结石 / 智齿发炎）。';
+      }
+    }
     let html = '';
-    html += '<div class="hero">';
-    html += '<div class="hero-top"><div><div class="hero-greet">' + esc(greet) + ' 👋</div><div class="hero-sub">' + esc(sub) + '</div></div><div class="hero-date">' + esc(dateStr) + '</div></div>';
-    html += '<div class="hero-stats">';
-    html += '<div class="hstat"><div class="hstat-num">' + dayNum + (dayUnit ? '<span class="hstat-unit">' + dayUnit + '</span>' : '') + '</div><div class="hstat-lbl">' + dayLbl + '</div></div>';
-    html += '<div class="hstat"><div class="hstat-num">' + waterTotal + '<span class="hstat-unit">ml</span></div><div class="hstat-lbl">今日饮水</div></div>';
-    html += '</div>';
-    html += '<div class="water-bar"><div class="water-fill" style="width:' + waterPct + '%"></div></div>';
-    html += '<div class="water-txt">饮水目标 ' + goal + 'ml · 还差 ' + Math.max(0, goal - waterTotal) + 'ml（少量多次更护肾）</div>';
-    html += '<div class="hero-actions">';
-    html += '<button class="btn-light" onclick="App.quickSymptom()">记症状</button>';
-    html += '<button class="btn-light" onclick="App.quickWater()">记饮水</button>';
-    html += '<button class="btn-light" onclick="App.quickDiet()">记饮食</button>';
-    html += '<button class="btn-light" onclick="App.go(\'food\')">查饮食</button>';
+    html += '<div class="card">';
+    html += '<div class="row-between"><h2>👋 今日概览</h2></div>';
+    html += '<div class="muted">' + esc(summary) + '</div>';
+    html += '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">';
+    html += '<button class="btn secondary sm" onclick="App.quickSymptom()">记症状</button>';
+    html += '<button class="btn secondary sm" onclick="App.quickWater()">记饮水</button>';
+    html += '<button class="btn secondary sm" onclick="App.go(\'food\')">查饮食</button>';
     html += '</div></div>';
-
     html += renderDietScore();
     adv.forEach(function (a) {
       html += '<div class="advice ' + a.level + '"><div class="a-title">' + esc(a.title) + '</div><div class="a-text">' + esc(a.text) + '</div></div>';
@@ -161,33 +157,29 @@
     view.innerHTML = html;
   }
 
-  // 今日饮食评分卡片（环形仪表）
+  // 今日饮食评分卡片
   function renderDietScore() {
     const p = Store.getProfile();
     const tl = Store.getTimeline();
     const s = Advice.scoreTodayDiet(p, tl);
-    let html = '<div class="diet-score">';
+    let html = '<div class="card diet-score' + (s.empty ? '' : ' ' + s.level) + '">';
     html += '<div class="row-between"><h2>🍱 今日饮食评分</h2><span class="muted">' + esc(s.date) + '</span></div>';
     if (s.empty) {
       html += '<div class="muted" style="margin-top:8px">' + esc(s.text) + '</div>';
     } else {
-      const ringColor = s.level === 'good' ? 'var(--ring-good)' : (s.level === 'info' ? 'var(--ring-info)' : 'var(--ring-warn)');
-      html += '<div class="score-gauge">';
-      html += '<div class="score-ring" style="--p:' + s.score + '; --ring:' + ringColor + '"><div class="ring-hole"><div class="ring-num">' + s.score + '<span class="ring-unit">分</span></div><div class="ring-lvl" style="color:' + ringColor + '">' + s.levelText + '</div></div></div>';
-      html += '<div class="score-meta"><div class="score-level ' + s.level + '">' + s.levelText + ' · ' + s.total + ' 种食物</div>';
+      html += '<div class="score-row">';
+      html += '<div class="score-big ' + s.level + '">' + s.score + '<span class="score-unit">分</span></div>';
+      html += '<div class="score-meta"><div class="score-level ' + s.level + '">' + s.levelText + '</div>';
       html += '<div class="score-tags"><span class="badge ok">可吃 ' + s.ok + '</span><span class="badge limit">适量 ' + s.limit + '</span><span class="badge avoid">忌口 ' + s.avoid + '</span></div></div>';
       html += '</div>';
       html += '<div class="score-analysis">' + esc(s.analysis) + '</div>';
       if (s.avoidList && s.avoidList.length) {
         html += '<div class="score-avoid">⚠️ 忌口食物：' + s.avoidList.map(function (i) { return esc(i.name); }).join('、') + '</div>';
       }
-      if (s.limitList && s.limitList.length) {
-        html += '<div class="score-limit">⚖️ 适量食物：' + s.limitList.map(function (i) { return esc(i.name); }).join('、') + '</div>';
-      }
       s.suggestions.forEach(function (t) {
-        html += '<div class="score-sug">' + esc(t) + '</div>';
+        html += '<div class="score-sug">• ' + esc(t) + '</div>';
       });
-      html += '<button class="btn secondary sm" style="margin-top:12px" onclick="App.go(\'food\')">去查食物宜忌</button>';
+      html += '<button class="btn secondary sm" style="margin-top:10px" onclick="App.go(\'food\')">去查食物宜忌</button>';
     }
     html += '</div>';
     return html;
@@ -243,10 +235,8 @@
   }
 
   // ---------- 饮食 ----------
-  var dietAllParts = [];
   function openDietForm() {
     dietPicks = [];
-    dietAllParts = [];
     let html = '<h2>🍽️ 饮食记录</h2>';
     html += field('日期', '<input type="date" id="f_date" value="' + today() + '">');
     html += '<div class="field"><label>餐次</label><div class="chip-row">' + chips('meal', ['早餐', '午餐', '晚餐'], defaultMeal()) + '</div></div>';
@@ -260,61 +250,37 @@
     const q = val('diet_search').trim();
     const box = $('#diet_cand');
     if (!box) return;
-    if (!q) { box.innerHTML = ''; dietAllParts = []; return; }
+    if (!q) { box.innerHTML = ''; return; }
     const profile = Store.getProfile();
-    const stone = profile ? profile.stoneType : 'unknown';
+    const conds = Knowledge.getConditions(profile);
     // 精确匹配
     const exact = Knowledge.FOODS.filter(function (f) { return f.name.indexOf(q) >= 0 || f.cat.indexOf(q) >= 0; });
-    // 菜谱匹配：输入文本命中菜名 → 列出组成食材（来自 DISHES）
-    const dishParts = [];
-    let matchedDish = '';
-    Knowledge.DISHES.forEach(function (d) {
-      if (q.indexOf(d.name) >= 0 || d.name.indexOf(q) >= 0) {
-        matchedDish = d.name;
-        d.ingredients.forEach(function (ing) {
-          if (Knowledge.findFood(ing) && dishParts.indexOf(ing) < 0) dishParts.push(ing);
-        });
-      }
-    });
     // 成分识别：输入文本中包含的食物名（如"番茄鸡蛋汤"→番茄、鸡蛋）
-    const subParts = Knowledge.FOODS.filter(function (f) {
+    const parts = Knowledge.FOODS.filter(function (f) {
       return f.name.length >= 2 && q.indexOf(f.name) >= 0 && exact.indexOf(f) < 0;
     });
-    // 合并菜谱与子串识别结果，去重
-    const allNames = dishParts.concat(subParts.map(function (f) { return f.name; }));
-    const allParts = [];
-    allNames.forEach(function (n) { if (allParts.indexOf(n) < 0) allParts.push(n); });
-    dietAllParts = allParts;
     let html = '';
     if (exact.length) {
       html += exact.slice(0, 8).map(function (f) {
-        const j = Knowledge.judge(f, stone);
+        const j = Knowledge.judge(f, conds);
         return '<div class="food-item" onclick="App.addPick(\'' + esc(f.name) + '\')"><div class="food-main"><div class="food-name">' + esc(f.name) + '</div><div class="food-cat">' + esc(f.cat) + '</div></div><span class="badge ' + j.verdict + '">' + j.label + '</span></div>';
       }).join('');
     }
-    if (allParts.length) {
-      const qIsExactFood = exact.some(function (f) { return f.name === q; });
-      const title = (matchedDish && !qIsExactFood)
-        ? ('识别为菜品：' + matchedDish + '，已列出常见食材（点选或一键加入）：')
-        : ('从「' + q + '」中识别出以下食材（点选或一键加入）：');
-      const list = allParts.slice(0, 16).map(function (n) {
-        const f = Knowledge.findFood(n);
-        const j = Knowledge.judge(f, stone);
-        return '<div class="food-item" onclick="App.addPick(\'' + esc(n) + '\')"><div class="food-main"><div class="food-name">' + esc(n) + '</div><div class="food-cat">' + esc(f ? f.cat : '') + '</div></div><span class="badge ' + j.verdict + '">' + j.label + '</span></div>';
+    if (parts.length) {
+      const list = parts.slice(0, 12).map(function (f) {
+        const j = Knowledge.judge(f, conds);
+        return '<div class="food-item" onclick="App.addPick(\'' + esc(f.name) + '\')"><div class="food-main"><div class="food-name">' + esc(f.name) + '</div><div class="food-cat">' + esc(f.cat) + '</div></div><span class="badge ' + j.verdict + '">' + j.label + '</span></div>';
       }).join('');
-      html += '<div class="ocr-hint">' + esc(title) + '</div>' + list +
-        '<div style="margin:6px 0 10px"><button class="btn sm" onclick="App.addAllParts()">全部加入（' + allParts.length + '）</button></div>';
+      html += '<div class="ocr-hint">从「' + esc(q) + '」中识别出以下食材（点选或一键加入）：</div>' + list +
+        '<div style="margin:6px 0 10px"><button class="btn sm" onclick="App.addAllParts()">全部加入（' + parts.length + '）</button></div>';
     }
     box.innerHTML = html;
   }
   function addAllParts() {
-    let names = dietAllParts;
-    if (!names || !names.length) {
-      const q = val('diet_search').trim();
-      if (!q) return;
-      names = Knowledge.FOODS.filter(function (f) { return f.name.length >= 2 && q.indexOf(f.name) >= 0; }).map(function (f) { return f.name; });
-    }
-    names.forEach(function (n) { addPick(n); });
+    const q = val('diet_search').trim();
+    if (!q) return;
+    const parts = Knowledge.FOODS.filter(function (f) { return f.name.length >= 2 && q.indexOf(f.name) >= 0; });
+    parts.forEach(function (f) { addPick(f.name); });
     const s = $('#diet_search'); if (s) s.value = '';
     const box = $('#diet_cand'); if (box) box.innerHTML = '';
   }
@@ -322,8 +288,9 @@
     if (dietPicks.find(function (x) { return x.name === name; })) return;
     const p = Store.getProfile();
     const f = Knowledge.findFood(name);
-    const j = Knowledge.judge(f, p ? p.stoneType : 'unknown');
-    dietPicks.push({ name: name, verdict: j.verdict, label: j.label });
+    if (!f) return;
+    const j = Knowledge.judge(f, Knowledge.getConditions(p));
+    dietPicks.push({ name: name, verdict: j.verdict, label: j.label, reasons: j.reasons });
     renderPicks();
     const box = $('#diet_cand'); if (box) box.innerHTML = '';
     const s = $('#diet_search'); if (s) s.value = '';
@@ -331,7 +298,12 @@
   function renderPicks() {
     const box = $('#diet_picks'); if (!box) return;
     box.innerHTML = dietPicks.map(function (p, i) {
-      return '<span class="pick"><span class="badge ' + p.verdict + '">' + p.label + '</span>' + esc(p.name) + ' <span class="x" onclick="App.removePick(' + i + ')">✕</span></span>';
+      let r = '';
+      if (p.reasons && p.reasons.length) {
+        const rn = p.reasons.map(function (x) { return x.conditionName + (x.stageName ? '（' + x.stageName + '）' : ''); }).join('、');
+        r = ' <span class="pick-reason">因' + esc(rn) + '</span>';
+      }
+      return '<span class="pick"><span class="badge ' + p.verdict + '">' + p.label + '</span>' + esc(p.name) + r + ' <span class="x" onclick="App.removePick(' + i + ')">✕</span></span>';
     }).join('');
   }
   function removePick(i) { dietPicks.splice(i, 1); renderPicks(); }
@@ -471,7 +443,13 @@
   function renderFood() {
     const p = Store.getProfile();
     let head = '<div class="card"><h2>🍎 饮食查询</h2>';
-    head += '<p class="muted">输入食物名，查看「能不能吃」及原因。当前按结石类型：<b>' + stoneLabel(p ? p.stoneType : 'unknown') + '</b> 判断。</p></div>';
+    const conds = Knowledge.getConditions(p);
+    const condText = conds.length ? conds.map(function (c) {
+      if (c.id === 'kidney_stone') return '肾结石（' + stoneLabel(c.stoneType) + '）';
+      if (c.id === 'wisdom_tooth') return '智齿发炎（' + ((Knowledge.CONDITIONS.wisdom_tooth.stages[c.stage] || {}).name || '发炎期') + '）';
+      return c.id;
+    }).join('、') : '未选择病种（按通用参考）';
+    head += '<p class="muted">输入食物名，查看「能不能吃」及原因。当前按：<b>' + esc(condText) + '</b> 判断。</p></div>';
     head += '<div class="search-box"><span class="si">🔍</span><input type="text" id="food_q" placeholder="输入食物，如 菠菜" oninput="App.foodSearch()"></div>';
     head += '<div id="food_list"></div>';
     view.innerHTML = head;
@@ -479,6 +457,7 @@
   }
   function foodSearch() {
     const p = Store.getProfile();
+    const conds = Knowledge.getConditions(p);
     const q = (val('food_q') || '').trim();
     const box = $('#food_list'); if (!box) return;
     let list;
@@ -489,8 +468,12 @@
     }
     if (!list.length) { box.innerHTML = '<div class="empty">未找到相关食物，试试别的名字</div>'; return; }
     box.innerHTML = list.slice(0, 40).map(function (f) {
-      const j = Knowledge.judge(f, p ? p.stoneType : 'unknown');
-      return '<div class="food-item"><div class="food-main"><div class="food-name">' + esc(f.name) + '</div><div class="food-cat">' + esc(f.cat) + '</div><div class="food-note">' + esc(f.note) + '</div></div><span class="badge ' + j.verdict + '">' + j.label + '</span></div>';
+      const j = Knowledge.judge(f, conds);
+      let reasonHtml = '';
+      if (j.reasons && j.reasons.length) {
+        reasonHtml = '<div class="food-reason">⚠️ ' + j.reasons.map(function (r) { return esc(r.conditionName + (r.stageName ? '（' + r.stageName + '）' : '') + '：' + r.note); }).join('；') + '</div>';
+      }
+      return '<div class="food-item"><div class="food-main"><div class="food-name">' + esc(f.name) + '</div><div class="food-cat">' + esc(f.cat) + '</div><div class="food-note">' + esc(f.note) + '</div>' + reasonHtml + '</div><span class="badge ' + j.verdict + '">' + j.label + '</span></div>';
     }).join('');
   }
 
@@ -504,7 +487,19 @@
       html += '<div class="profile-line"><b>' + esc(p.name || '未填姓名') + '</b>' + (p.gender ? ' · ' + esc(p.gender) : '') + (p.age ? ' · ' + esc(p.age) + '岁' : '') + '</div>';
       html += '<div class="muted">诊断：' + esc(p.diagnosis || '肾结石') + (p.affectedSide ? '（' + esc(p.affectedSide) + '）' : '') + '</div>';
       html += '<div class="muted">手术日期：' + esc(p.surgeryDate || '未填') + (p.surgeryType ? ' · ' + esc(p.surgeryType) : '') + '</div>';
-      html += '<div class="muted">结石类型：' + stoneLabel(p.stoneType) + '</div>';
+      const conds = Knowledge.getConditions(p);
+      if (conds.length) {
+        conds.forEach(function (c) {
+          if (c.id === 'kidney_stone') {
+            html += '<div class="muted">肾结石 · ' + stoneLabel(c.stoneType) + (c.surgeryDate ? (' · 手术 ' + esc(c.surgeryDate)) : '') + '</div>';
+          } else if (c.id === 'wisdom_tooth') {
+            const st = (Knowledge.CONDITIONS.wisdom_tooth.stages[c.stage] || {}).name || '发炎期';
+            html += '<div class="muted">智齿发炎 · ' + st + (c.meds && c.meds.length ? (' · 服' + c.meds.join('、')) : '') + '</div>';
+          }
+        });
+      } else {
+        html += '<div class="muted">未选择病种，点此完善</div>';
+      }
       html += '<div class="muted">饮水目标：' + (p.waterGoal || 2000) + 'ml/天</div>';
     } else {
       html += '<div class="muted">尚未填写，点此完善（建议必填手术日期与结石类型）</div>';
@@ -527,26 +522,50 @@
   }
   function openProfileForm() {
     const p = Store.getProfile() || {};
-    const st = p.stoneType || 'unknown';
-    const side = p.affectedSide || '';
+    const conds = (p.conditions && p.conditions.length) ? p.conditions
+      : (p.stoneType ? [{ id: 'kidney_stone', stoneType: p.stoneType, surgeryDate: p.surgeryDate, surgeryType: p.surgeryType, affectedSide: p.affectedSide }] : []);
+    const hasKidney = conds.some(function (c) { return c.id === 'kidney_stone'; });
+    const hasTooth = conds.some(function (c) { return c.id === 'wisdom_tooth'; });
+    const kc = conds.find(function (c) { return c.id === 'kidney_stone'; }) || {};
+    const tc = conds.find(function (c) { return c.id === 'wisdom_tooth'; }) || {};
+    const st = kc.stoneType || 'unknown';
+    const side = kc.affectedSide || '';
+    const tstage = tc.stage || 'inflammation';
+    const tmeds = tc.meds || [];
     let html = '<h2>👤 个人档案</h2>';
     html += field('姓名', '<input type="text" id="p_name" value="' + esc(p.name || '') + '" placeholder="选填">');
-    html += '<div class="field"><label>性别</label><div class="chip-row">' +
-      chips('gender', ['男', '女'], p.gender || '') + '</div></div>';
+    html += '<div class="field"><label>性别</label><div class="chip-row">' + chips('gender', ['男', '女'], p.gender || '') + '</div></div>';
     html += field('年龄', '<input type="number" id="p_age" value="' + esc(p.age || '') + '" placeholder="岁" inputmode="numeric">');
-    html += field('诊断', '<input type="text" id="p_dx" value="' + esc(p.diagnosis || '肾结石') + '">');
-    html += field('手术日期', '<input type="date" id="p_surgery" value="' + esc(p.surgeryDate || '') + '">');
-    html += field('手术方式', '<input type="text" id="p_surgery_type" value="' + esc(p.surgeryType || '') + '" placeholder="如 经尿道输尿管软镜钬激光碎石术">');
-    html += '<div class="field"><label>结石类型</label><select id="p_stone">' +
+    // 病种多选
+    html += '<div class="field"><label>我的病种（可多选）</label>' +
+      '<label class="chk"><input type="checkbox" name="cond" value="kidney_stone"' + (hasKidney ? ' checked' : '') + ' onchange="App.toggleCondFields()"> 肾结石</label>' +
+      '<label class="chk"><input type="checkbox" name="cond" value="wisdom_tooth"' + (hasTooth ? ' checked' : '') + ' onchange="App.toggleCondFields()"> 智齿发炎</label></div>';
+    // 肾结石字段
+    let kHtml = '';
+    kHtml += field('手术日期', '<input type="date" id="p_surgery" value="' + esc(kc.surgeryDate || '') + '">');
+    kHtml += field('手术方式', '<input type="text" id="p_surgery_type" value="' + esc(kc.surgeryType || '') + '" placeholder="如 经尿道输尿管软镜钬激光碎石术">');
+    kHtml += '<div class="field"><label>结石类型</label><select id="p_stone">' +
       '<option value="unknown"' + (st === 'unknown' ? ' selected' : '') + '>未知</option>' +
       '<option value="calcium"' + (st === 'calcium' ? ' selected' : '') + '>草酸钙结石</option>' +
       '<option value="uric"' + (st === 'uric' ? ' selected' : '') + '>尿酸结石</option>' +
       '<option value="other"' + (st === 'other' ? ' selected' : '') + '>其他</option></select></div>';
-    html += '<div class="field"><label>患病侧</label><select id="p_side">' +
+    kHtml += '<div class="field"><label>患病侧</label><select id="p_side">' +
       '<option value=""' + (side === '' ? ' selected' : '') + '>未知</option>' +
       '<option value="左侧"' + (side === '左侧' ? ' selected' : '') + '>左侧</option>' +
       '<option value="右侧"' + (side === '右侧' ? ' selected' : '') + '>右侧</option>' +
       '<option value="双侧"' + (side === '双侧' ? ' selected' : '') + '>双侧</option></select></div>';
+    html += '<div id="kidney_fields" class="cond-block"' + (hasKidney ? '' : ' style="display:none"') + '>' + kHtml + '</div>';
+    // 智齿字段
+    let tHtml = '';
+    const stages = [['inflammation', '发炎期'], ['post_extraction', '拔牙后'], ['recovery', '恢复期']];
+    tHtml += '<div class="field"><label>当前阶段</label><div class="chip-row">' + stages.map(function (s) {
+      const sel = (tstage === s[0]) ? ' checked' : '';
+      return '<label class="chip' + (tstage === s[0] ? ' sel' : '') + '"><input type="radio" name="tstage" value="' + s[0] + '"' + sel + '>' + s[1] + '</label>';
+    }).join('') + '</div></div>';
+    tHtml += '<div class="field"><label>正在服用的消炎药</label>' +
+      '<label class="chk"><input type="checkbox" name="tmeds" value="甲硝唑"' + (tmeds.indexOf('甲硝唑') >= 0 ? ' checked' : '') + '> 甲硝唑</label>' +
+      '<label class="chk"><input type="checkbox" name="tmeds" value="头孢"' + (tmeds.indexOf('头孢') >= 0 ? ' checked' : '') + '> 头孢</label></div>';
+    html += '<div id="tooth_fields" class="cond-block"' + (hasTooth ? '' : ' style="display:none"') + '>' + tHtml + '</div>';
     html += field('饮水目标(ml/天)', '<input type="number" id="p_water" value="' + (p.waterGoal || 2000) + '" inputmode="numeric">');
     html += '<div class="modal-actions"><button class="btn ghost" onclick="App.closeModal()">取消</button><button class="btn" onclick="App.saveProfile()">保存</button></div>';
     openModal(html);
@@ -556,12 +575,25 @@
     p.name = val('p_name').trim();
     p.gender = checked('gender');
     p.age = val('p_age').trim();
-    p.diagnosis = val('p_dx').trim() || '肾结石';
-    p.surgeryDate = val('p_surgery');
-    p.surgeryType = val('p_surgery_type').trim();
-    p.stoneType = val('p_stone');
-    p.affectedSide = val('p_side');
     p.waterGoal = Number(val('p_water')) || 2000;
+    const cdVals = checkedValues('cond');
+    const conds = [];
+    if (cdVals.indexOf('kidney_stone') >= 0) {
+      const stoneType = val('p_stone');
+      conds.push({ id: 'kidney_stone', stoneType: stoneType, surgeryDate: val('p_surgery'), surgeryType: val('p_surgery_type').trim(), affectedSide: val('p_side'), stage: 'post_surgery' });
+      p.stoneType = stoneType; p.surgeryDate = val('p_surgery'); p.surgeryType = val('p_surgery_type').trim(); p.affectedSide = val('p_side');
+    } else {
+      delete p.stoneType; delete p.surgeryDate; delete p.surgeryType; delete p.affectedSide;
+    }
+    if (cdVals.indexOf('wisdom_tooth') >= 0) {
+      conds.push({ id: 'wisdom_tooth', stage: checked('tstage') || 'inflammation', meds: checkedValues('tmeds'), startDate: Store.todayStr() });
+    }
+    p.conditions = conds;
+    p.diagnosis = conds.map(function (c) {
+      if (c.id === 'kidney_stone') return '肾结石';
+      if (c.id === 'wisdom_tooth') return '智齿发炎';
+      return c.id;
+    }).join('、') || '未明确';
     Store.saveProfile(p);
     closeModal(); toast('已保存档案'); go('me');
   }
@@ -587,23 +619,26 @@
   function renderEvent(ev) {
     const meta = EVT[ev.type] || { ico: '•', label: ev.type };
     const d = ev.detail || {};
-    let title = meta.label, sub = '', subHtml = '';
+    let title = meta.label, sub = '', rawSub = false;
     if (ev.type === 'symptom') {
       title = '症状';
       sub = '尿色：' + (d.urineColor || '—') + '　疼痛：' + (d.pain || '—') + '　发热：' + (d.fever || '—');
       if (d.note) sub += '\n' + d.note;
     } else if (ev.type === 'diet') {
       title = '饮食' + (d.meal ? (' · ' + d.meal) : '');
-      const profile = Store.getProfile();
-      const stone = profile ? profile.stoneType : 'unknown';
-      const pills = (d.foods || []).map(function (f) {
-        const food = Knowledge.findFood(f.name);
-        const j = food ? Knowledge.judge(food, stone) : null;
-        const cls = j ? j.verdict : 'unknown';
-        return '<span class="tl-food ' + cls + '" title="' + (j ? esc(j.label) : '未识别') + '">' + esc(f.name) + '</span>';
-      }).join('');
-      subHtml = '<div class="tl-foods">' + pills + '</div>';
-      if (d.note) subHtml += '<div class="tl-note">备注：' + esc(d.note) + '</div>';
+      const foods = d.foods || [];
+      if (foods.length) {
+        const conds = Knowledge.getConditions(Store.getProfile());
+        sub = foods.map(function (f) {
+          const info = Knowledge.findFood(f.name);
+          let v = 'ok', reasons = [];
+          if (info) { const j = Knowledge.judge(info, conds); v = j.verdict; reasons = j.reasons; }
+          const rn = reasons.length ? ' <span class="tl-reason">因' + reasons.map(function (r) { return r.conditionName + (r.stageName ? '（' + r.stageName + '）' : ''); }).join('、') + '</span>' : '';
+          return '<span class="badge ' + v + '">' + Knowledge.verdictLabel(v) + '</span>' + esc(f.name) + rn;
+        }).join(' ');
+        rawSub = true;
+      }
+      if (d.note) sub += (sub ? '<br>' : '') + esc(d.note);
     } else if (ev.type === 'water') {
       title = '饮水'; sub = (d.amount || 0) + 'ml · ' + (d.wtype || '');
     } else if (ev.type === 'med') {
@@ -612,7 +647,7 @@
     } else if (ev.type === 'note') {
       title = '备注'; sub = d.text || '';
     }
-    return '<div class="tl-item"><div class="tl-ico">' + meta.ico + '</div><div class="tl-body"><div class="tl-title">' + title + (ev.time ? (' · ' + esc(ev.time)) : '') + '</div><div class="tl-sub">' + (subHtml || esc(sub)) + '</div></div><button class="tl-del" onclick="App.delEvent(\'' + ev.id + '\')">🗑</button></div>';
+    return '<div class="tl-item"><div class="tl-ico">' + meta.ico + '</div><div class="tl-body"><div class="tl-title">' + title + (ev.time ? (' · ' + esc(ev.time)) : '') + '</div><div class="tl-sub">' + (rawSub ? sub : esc(sub)) + '</div></div><button class="tl-del" onclick="App.delEvent(\'' + ev.id + '\')">🗑</button></div>';
   }
   function delEvent(id) {
     if (confirm('删除这条记录？')) { Store.deleteEvent(id); toast('已删除'); renderTimeline(); }
@@ -690,10 +725,9 @@
     const c = Store.getAIConfig();
     let html = '<h2>🤖 AI 助手设置</h2>';
     html += '<div class="ai-warn">⚠️ API Key 仅保存在你本机浏览器，不会上传到本应用服务器。但调用时你的问题内容会发送给你所填的 AI 服务商。请仅使用你信任的服务，并妥善保管 Key，不要泄露。</div>';
-    html += '<label class="field ai-switch-field"><span class="ai-switch-label">启用 AI 助手</span>' +
-      '<input type="checkbox" id="ai_enabled" class="ai-switch-input"' + (c.enabled ? ' checked' : '') + '>' +
-      '<span class="switch"></span></label>';
-    html += field('服务地址（Base URL）', '<input type="text" id="ai_base" value="' + esc(c.apiBase) + '" placeholder="如 https://api.deepseek.com/v1">');
+    html += field('启用 AI 助手',
+      '<label class="switch-row"><input type="checkbox" id="ai_enabled"' + (c.enabled ? ' checked' : '') + '><span class="switch"></span></label>');
+    html += field('API 地址（Base URL）', '<input type="text" id="ai_base" value="' + esc(c.apiBase) + '" placeholder="如 https://api.deepseek.com/v1">');
     html += field('API Key', '<input type="password" id="ai_key" value="' + esc(c.apiKey) + '" placeholder="sk-..." autocomplete="off">');
     html += field('模型名', '<input type="text" id="ai_model" value="' + esc(c.model) + '" placeholder="如 deepseek-chat">');
     html += '<div class="field"><label>兼容说明</label><div class="muted">接口采用 OpenAI Chat Completions 格式，可填写 DeepSeek、通义千问、豆包、OpenAI 等。需服务商支持浏览器跨域(CORS)。</div></div>';
@@ -872,6 +906,10 @@
     if (data.hospitalNo) p.hospitalNo = String(data.hospitalNo).trim();
     const memo = $('#ocr_memo') ? $('#ocr_memo').value.trim() : (data.memo || '');
     if (memo) p.memo = memo;
+    // 出院记录识别以肾结石为主，保留已有其他病种（如智齿）
+    const existing = (p.conditions && p.conditions.length) ? p.conditions.filter(function (c) { return c.id !== 'kidney_stone'; }) : [];
+    existing.push({ id: 'kidney_stone', stoneType: p.stoneType || 'unknown', surgeryDate: normalizeDate(data.surgeryDate), surgeryType: p.surgeryType, affectedSide: p.affectedSide, stage: 'post_surgery' });
+    p.conditions = existing;
     Store.saveProfile(p);
 
     // 同时存一份「出院记录」报告
@@ -901,6 +939,7 @@
 
   window.App = {
     pickChip: pickChip, go: go, closeModal: closeModal, openForm: openForm,
+    toggleCondFields: toggleCondFields,
     saveSymptom: saveSymptom, saveDiet: saveDiet, saveWater: saveWater,
     saveMed: saveMed, saveNote: saveNote,
     dietSearch: dietSearch, addPick: addPick, removePick: removePick, addAllParts: addAllParts,
@@ -909,7 +948,7 @@
     foodSearch: foodSearch,
     openProfileForm: openProfileForm, saveProfile: saveProfile,
     exportBackup: exportBackup, importBackup: importBackup,
-    delEvent: delEvent, quickSymptom: quickSymptom, quickWater: quickWater, quickDiet: openDietForm,
+    delEvent: delEvent, quickSymptom: quickSymptom, quickWater: quickWater,
     openAIChat: openAIChat, sendAI: sendAI, aiKey: aiKey,
     openAISettings: openAISettings, saveAISettings: saveAISettings,
     openReportOCR: openReportOCR, ocrPreview: ocrPreview,
