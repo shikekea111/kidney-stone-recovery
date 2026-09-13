@@ -247,20 +247,33 @@
     { name: '鸡蛋羹', cat: '肉蛋奶', ox: 'ok', ur: 'ok', note: '温软，发炎期适宜。' },
     { name: '土豆泥', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '软烂，发炎期适宜。' },
     { name: '南瓜糊', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '软烂温凉，发炎期适宜。' },
-    { name: '燕麦粥', cat: '主食', ox: 'limit', ur: 'ok', note: '温软，适量。' }
+    { name: '燕麦粥', cat: '主食', ox: 'limit', ur: 'ok', note: '温软，适量。' },
+    { name: '西柚', cat: '水果', ox: 'ok', ur: 'ok', note: '含呋喃香豆素，服降压药（钙拮抗剂）期间严禁，否则药效骤增、血压骤降。' },
+    { name: '咸鸭蛋', cat: '肉蛋奶', ox: 'ok', ur: 'ok', note: '腌制高盐，高血压严格限制；肾结石亦需少盐。' },
+    { name: '热干面', cat: '主食', ox: 'limit', ur: 'ok', note: '武汉特色早餐：碱水面+芝麻酱。芝麻酱草酸与脂肪偏高，尿路结石者适量；高血压注意芝麻酱的钠与脂肪，当作主食适量即可。' },
+    { name: '排骨', cat: '肉蛋奶', ox: 'limit', ur: 'limit', note: '猪排骨属红肉，适量；带脂肪，高血压限量、结石者亦勿过量。炖汤后撇去浮油更健康。' }
   ];
 
   // ===== 食物属性标签：用于智齿等按"物理/刺激属性"判定（与肾结石的化学维度 ox/ur 解耦） =====
   // hard 坚硬需嚼 / crispy 酥脆碎渣 / sticky 黏 / spicy 辛辣 / coarse 粗纤维需大张口 / acidic 过酸 / sugar 高糖 / alcohol 含酒精
   const FOOD_TAGS = {
+    // —— 智齿相关（原有）——
     '花生': ['hard'], '瓜子': ['hard'], '核桃': ['hard'], '杏仁': ['hard'], '腰果': ['hard'], '芝麻': ['hard'], '冰块': ['hard'],
-    '薯片': ['crispy'], '锅巴': ['crispy', 'hard'], '饼干': ['crispy', 'sugar'], '油条': ['crispy'],
+    '薯片': ['crispy', 'high_sodium'], '锅巴': ['crispy', 'hard'], '饼干': ['crispy', 'sugar'], '油条': ['crispy', 'high_sodium', 'high_fat'],
     '年糕': ['sticky'], '汤圆': ['sticky'], '糯米糍': ['sticky'], '软糖': ['sticky', 'sugar'], '糖果': ['sticky', 'sugar'],
     '辣椒': ['spicy'], '花椒': ['spicy'], '芥末': ['spicy'], '咖喱': ['spicy'],
-    '竹笋': ['coarse'], '芹菜': ['coarse'], '玉米': ['coarse'], '苹果': ['coarse'], '牛肉': ['coarse'], '牛肉干': ['hard', 'coarse'], '汉堡': ['coarse'],
+    '竹笋': ['coarse'], '芹菜': ['coarse'], '玉米': ['coarse'], '苹果': ['coarse'], '牛肉': ['coarse', 'high_fat'], '牛肉干': ['hard', 'coarse'], '汉堡': ['coarse'],
     '柠檬': ['acidic'], '橘子': ['acidic'], '橙子': ['acidic'], '醋': ['acidic'], '番茄': ['acidic'],
-    '巧克力': ['sugar'], '可乐': ['sugar'], '果汁': ['sugar'], '蛋糕': ['sugar'], '荔枝': ['sugar'], '西瓜': ['sugar'],
-    '啤酒': ['alcohol'], '白酒': ['alcohol'], '黄酒': ['alcohol']
+    '巧克力': ['sugar', 'caffeine'], '可乐': ['sugar', 'caffeine'], '果汁': ['sugar'], '蛋糕': ['sugar'], '荔枝': ['sugar'], '西瓜': ['sugar'],
+    '啤酒': ['alcohol'], '白酒': ['alcohol'], '黄酒': ['alcohol'],
+    // —— 高血压相关 ——
+    '盐': ['high_sodium'], '酱油': ['high_sodium'], '味精': ['high_sodium'],
+    '香肠': ['high_sodium'], '腊肉': ['high_sodium'], '皮蛋': ['high_sodium'],
+    '奶酪': ['high_sodium'], '芝士': ['high_sodium'], '运动饮料': ['high_sodium'], '番茄酱': ['high_sodium'], '咸鸭蛋': ['high_sodium'],
+    '猪肉': ['high_fat'], '排骨': ['high_fat'], '羊肉': ['high_fat'], '鸭肉': ['high_fat'], '鹅肉': ['high_fat'],
+    '黄油': ['high_fat'], '奶油': ['high_fat'],
+    '咖啡': ['caffeine'], '浓茶': ['caffeine'], '可可': ['caffeine'],
+    '柚子': ['grapefruit'], '西柚': ['grapefruit']
   };
 
   // ===== 多病种规则引擎 =====
@@ -302,6 +315,24 @@
         if (tags.indexOf('alcohol') >= 0) return { verdict: 'avoid', note: rules.avoidNote + '（含酒精）' };
         if (arrIntersect(tags, rules.avoid)) return { verdict: 'avoid', note: rules.avoidNote };
         if (arrIntersect(tags, rules.limit)) return { verdict: 'limit', note: rules.limitNote };
+        return { verdict: 'ok', note: '' };
+      }
+    },
+    hypertension: {
+      id: 'hypertension', name: '高血压', icon: '🫀',
+      judge: function (food, cond) {
+        const tags = FOODS_TAGS_SAFE(food.name);
+        // 用药红线：服降压药期间严禁西柚/柚子（呋喃香豆素↔钙拮抗剂危险交互）
+        if (cond && cond.meds && cond.meds.length && tags.indexOf('grapefruit') >= 0) {
+          return { verdict: 'avoid', hardWarn: true,
+            note: '你正在服用降压药，严禁吃西柚/柚子：其含有的呋喃香豆素会抑制肝脏代谢酶，使降压药（尤其钙拮抗剂类）血药浓度飙升，导致血压骤降甚至低血压休克。' };
+        }
+        if (tags.indexOf('high_sodium') >= 0) return { verdict: 'avoid', note: '高盐（钠）食物会升高血压、加重心脏与血管负担，高血压应严格限制，每天食盐<5克。' };
+        if (tags.indexOf('grapefruit') >= 0) return { verdict: 'limit', note: '西柚/柚子含呋喃香豆素，若服用降压药（钙拮抗剂）会产生危险交互；即使未服药也建议尽量少吃。' };
+        if (tags.indexOf('high_fat') >= 0) return { verdict: 'limit', note: '高脂食物易致肥胖与动脉硬化，建议控制分量。' };
+        if (tags.indexOf('alcohol') >= 0) return { verdict: 'limit', note: '酒精会使血压波动、抵消药效，建议尽量少喝或不喝。' };
+        if (tags.indexOf('caffeine') >= 0) return { verdict: 'limit', note: '咖啡因短期内会升血压，敏感者适量、避免空腹与睡前饮用。' };
+        if (tags.indexOf('sugar') >= 0) return { verdict: 'limit', note: '高糖饮食易致肥胖，间接升高血压，建议控制。' };
         return { verdict: 'ok', note: '' };
       }
     }

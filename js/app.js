@@ -10,6 +10,7 @@
   let currentTab = 'advice';
   let dietPicks = [];
   let reportPendingBlob = null;
+  const APP_VERSION = '2.5.0';
 
   // ---------- helpers ----------
   function esc(s) {
@@ -50,8 +51,10 @@
     const vals = checkedValues('cond');
     const kf = document.getElementById('kidney_fields');
     const tf = document.getElementById('tooth_fields');
+    const hf = document.getElementById('hypertension_fields');
     if (kf) kf.style.display = (vals.indexOf('kidney_stone') >= 0) ? '' : 'none';
     if (tf) tf.style.display = (vals.indexOf('wisdom_tooth') >= 0) ? '' : 'none';
+    if (hf) hf.style.display = (vals.indexOf('hypertension') >= 0) ? '' : 'none';
   }
   function field(label, control) { return '<div class="field"><label>' + label + '</label>' + control + '</div>'; }
   function chips(name, arr, sel) {
@@ -106,11 +109,20 @@
     window.scrollTo(0, 0);
   }
   function render() {
-    if (currentTab === 'advice') return renderAdvice();
-    if (currentTab === 'timeline') return renderTimeline();
-    if (currentTab === 'record') return renderRecordHome();
-    if (currentTab === 'food') return renderFood();
-    if (currentTab === 'me') return renderMe();
+    if (currentTab === 'advice') renderAdvice();
+    else if (currentTab === 'timeline') renderTimeline();
+    else if (currentTab === 'record') renderRecordHome();
+    else if (currentTab === 'food') renderFood();
+    else if (currentTab === 'me') renderMe();
+    playViewAnim();
+  }
+  // 页面切换淡入（重置动画需强制重排）
+  function playViewAnim() {
+    try {
+      view.classList.remove('fade');
+      void view.offsetWidth;
+      view.classList.add('fade');
+    } catch (e) { /* 忽略 */ }
   }
 
   // ---------- 建议 ----------
@@ -120,6 +132,7 @@
     const rp = Store.getReports();
     const adv = Advice.buildAdvice(p, tl, rp);
     let summary = '尚未填写个人档案，建议到「我的」选择病种并完善信息。';
+    let condChips = '';
     if (p) {
       const conds = Knowledge.getConditions(p);
       if (conds.length) {
@@ -134,20 +147,37 @@
           }
           return c.id;
         });
-        summary = parts.join('　·　') + '　·　饮水目标 ' + (p.waterGoal || 2000) + 'ml/天';
+        const hasKidney = conds.some(function (c) { return c.id === 'kidney_stone'; });
+        summary = parts.join('　·　') + (hasKidney ? ('　·　饮水目标 ' + (p.waterGoal || 2000) + 'ml/天') : '');
+        condChips = conds.map(function (c) {
+          if (c.id === 'kidney_stone') {
+            const ds = Advice.daysSince(c.surgeryDate);
+            return '<span class="chip static">🩺 肾结石' + (ds !== null && ds >= 0 ? ' · 术后第' + ds + '天' : '') + '</span>';
+          }
+          if (c.id === 'wisdom_tooth') {
+            const st = (Knowledge.CONDITIONS.wisdom_tooth.stages[c.stage] || {}).name || '发炎期';
+            return '<span class="chip static">🦷 智齿 · ' + esc(st) + '</span>';
+          }
+          if (c.id === 'hypertension') {
+            return '<span class="chip static">🫀 高血压' + (c.meds && c.meds.length ? ' · 服药' : '') + '</span>';
+          }
+          return '<span class="chip static">' + esc(c.id) + '</span>';
+        }).join('');
       } else {
         summary = '已填部分信息，但未选择病种，建议到「我的」勾选（肾结石 / 智齿发炎）。';
       }
     }
     let html = '';
     html += '<div class="card">';
-    html += '<div class="row-between"><h2>👋 今日概览</h2></div>';
+    html += '<div class="row-between"><h2>👋 今日概览</h2><span class="muted">' + esc(today()) + '</span></div>';
+    if (condChips) html += '<div class="chip-row" style="margin-bottom:10px">' + condChips + '</div>';
     html += '<div class="muted">' + esc(summary) + '</div>';
-    html += '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">';
-    html += '<button class="btn secondary sm" onclick="App.quickSymptom()">记症状</button>';
-    html += '<button class="btn secondary sm" onclick="App.quickWater()">记饮水</button>';
-    html += '<button class="btn secondary sm" onclick="App.go(\'food\')">查饮食</button>';
+    html += '<div class="quick-act">';
+    html += '<button class="btn secondary sm" onclick="App.quickSymptom()">🩺 记症状</button>';
+    html += '<button class="btn secondary sm" onclick="App.quickWater()">💧 记饮水</button>';
+    html += '<button class="btn secondary sm" onclick="App.quickDiet()">🍎 记饮食</button>';
     html += '</div></div>';
+    html += medsExpiryNotice();
     html += renderDietScore();
     adv.forEach(function (a) {
       html += '<div class="advice ' + a.level + '"><div class="a-title">' + esc(a.title) + '</div><div class="a-text">' + esc(a.text) + '</div></div>';
@@ -169,7 +199,9 @@
     } else {
       html += '<div class="score-row">';
       html += '<div class="score-big ' + s.level + '">' + s.score + '<span class="score-unit">分</span></div>';
+      const pct = Math.max(4, Math.min(100, Number(s.score) || 0));
       html += '<div class="score-meta"><div class="score-level ' + s.level + '">' + s.levelText + '</div>';
+      html += '<div class="score-bar"><div class="score-bar-in ' + s.level + '" style="width:' + pct + '%"></div></div>';
       html += '<div class="score-tags"><span class="badge ok">可吃 ' + s.ok + '</span><span class="badge limit">适量 ' + s.limit + '</span><span class="badge avoid">忌口 ' + s.avoid + '</span></div></div>';
       html += '</div>';
       html += '<div class="score-analysis">' + esc(s.analysis) + '</div>';
@@ -273,6 +305,9 @@
       }).join('');
       html += '<div class="ocr-hint">从「' + esc(q) + '」中识别出以下食材（点选或一键加入）：</div>' + list +
         '<div style="margin:6px 0 10px"><button class="btn sm" onclick="App.addAllParts()">全部加入（' + parts.length + '）</button></div>';
+    }
+    if (!html) {
+      html = '<div class="ocr-hint" style="color:#b3232b;line-height:1.6">未收录「' + esc(q) + '」。可尝试：<br>① 输入更常见的食材名（如 番茄、鸡蛋、米饭、猪肉）；<br>② 把一餐拆成多种食材分别输入（如「土豆」「藕」「排骨」）；<br>③ 直接输入整道菜名，应用会自动识别其中食材（如「土豆藕炖排骨」）。</div>';
     }
     box.innerHTML = html;
   }
@@ -447,6 +482,7 @@
     const condText = conds.length ? conds.map(function (c) {
       if (c.id === 'kidney_stone') return '肾结石（' + stoneLabel(c.stoneType) + '）';
       if (c.id === 'wisdom_tooth') return '智齿发炎（' + ((Knowledge.CONDITIONS.wisdom_tooth.stages[c.stage] || {}).name || '发炎期') + '）';
+      if (c.id === 'hypertension') return '高血压' + (c.meds && c.meds.length ? '（服药）' : '');
       return c.id;
     }).join('、') : '未选择病种（按通用参考）';
     head += '<p class="muted">输入食物名，查看「能不能吃」及原因。当前按：<b>' + esc(condText) + '</b> 判断。</p></div>';
@@ -466,8 +502,14 @@
     } else {
       list = Knowledge.FOODS.filter(function (f) { return f.name.indexOf(q) >= 0 || f.cat.indexOf(q) >= 0; });
     }
-    if (!list.length) { box.innerHTML = '<div class="empty">未找到相关食物，试试别的名字</div>'; return; }
-    box.innerHTML = list.slice(0, 40).map(function (f) {
+    if (!list.length) {
+      box.innerHTML = '<div class="empty"><div class="em-ico">🔍</div><p>没找到「' + esc(q) + '」</p>' +
+        '<p class="muted">换个名字试试，或从下面常见的里面选</p></div>' + hotFoodHtml();
+      return;
+    }
+    let pre = '';
+    if (!q) pre = '<div class="muted" style="margin:2px 2px 8px">下面是常见食物，也可以直接搜菜名（如 番茄鸡蛋汤）</div>';
+    box.innerHTML = pre + list.slice(0, 40).map(function (f) {
       const j = Knowledge.judge(f, conds);
       let reasonHtml = '';
       if (j.reasons && j.reasons.length) {
@@ -476,13 +518,26 @@
       return '<div class="food-item"><div class="food-main"><div class="food-name">' + esc(f.name) + '</div><div class="food-cat">' + esc(f.cat) + '</div><div class="food-note">' + esc(f.note) + '</div>' + reasonHtml + '</div><span class="badge ' + j.verdict + '">' + j.label + '</span></div>';
     }).join('');
   }
+  // 常见食物快捷入口（空结果 / 引导用）
+  function hotFoodHtml() {
+    const hot = ['菠菜', '牛奶', '豆腐', '啤酒', '坚果', '巧克力', '西红柿', '虾仁', '辣椒', '咖啡'];
+    return '<div class="chip-row" style="justify-content:center;margin-top:4px">' + hot.map(function (n) {
+      return '<span class="chip" onclick="App.setFoodQ(\'' + n + '\')">' + n + '</span>';
+    }).join('') + '</div>';
+  }
+  function setFoodQ(n) {
+    const el = document.getElementById('food_q');
+    if (!el) return;
+    el.value = n;
+    foodSearch();
+  }
 
   // ---------- 我的 ----------
   function renderMe() {
     const p = Store.getProfile();
     const reports = Store.getReports();
     let html = '';
-    html += '<div class="card" onclick="App.openProfileForm()" style="cursor:pointer"><div class="row-between"><h2>👤 个人档案</h2><span class="muted">编辑 ›</span></div>';
+    html += '<div class="card card-hero" onclick="App.openProfileForm()" style="cursor:pointer"><div class="row-between"><h2>👤 个人档案</h2><span class="muted">编辑 ›</span></div>';
     if (p) {
       html += '<div class="profile-line"><b>' + esc(p.name || '未填姓名') + '</b>' + (p.gender ? ' · ' + esc(p.gender) : '') + (p.age ? ' · ' + esc(p.age) + '岁' : '') + '</div>';
       html += '<div class="muted">诊断：' + esc(p.diagnosis || '肾结石') + (p.affectedSide ? '（' + esc(p.affectedSide) + '）' : '') + '</div>';
@@ -493,19 +548,33 @@
           if (c.id === 'kidney_stone') {
             html += '<div class="muted">肾结石 · ' + stoneLabel(c.stoneType) + (c.surgeryDate ? (' · 手术 ' + esc(c.surgeryDate)) : '') + '</div>';
           } else if (c.id === 'wisdom_tooth') {
-            const st = (Knowledge.CONDITIONS.wisdom_tooth.stages[c.stage] || {}).name || '发炎期';
-            html += '<div class="muted">智齿发炎 · ' + st + (c.meds && c.meds.length ? (' · 服' + c.meds.join('、')) : '') + '</div>';
+            const st = stageName(c.stage);
+            html += '<div class="muted">智齿发炎 · ' + esc(st) + (c.meds && c.meds.length ? (' · 服' + esc(c.meds.join('、'))) : '') + '</div>';
+            html += '<div class="quick-row">' +
+              '<span class="quick-chip" onclick="event.stopPropagation();App.quickEditStage()">阶段：' + esc(st) + ' ✏️</span>' +
+              '<span class="quick-chip" onclick="event.stopPropagation();App.quickEditMeds()">用药：' + (c.meds && c.meds.length ? esc(c.meds.join('、')) : '无') + ' ✏️</span>' +
+              '</div>';
+          } else if (c.id === 'hypertension') {
+            html += '<div class="muted">高血压' + (c.meds && c.meds.length ? (' · 服' + esc(c.meds.join('、'))) : ' · 未登记用药') + '</div>';
+            html += '<div class="quick-row">' +
+              '<span class="quick-chip" onclick="event.stopPropagation();App.quickEditBpMeds()">用药：' + (c.meds && c.meds.length ? esc(c.meds.join('、')) : '无') + ' ✏️</span>' +
+              '</div>';
           }
         });
       } else {
         html += '<div class="muted">未选择病种，点此完善</div>';
       }
-      html += '<div class="muted">饮水目标：' + (p.waterGoal || 2000) + 'ml/天</div>';
+      const meHasKidney = conds.some(function (c) { return c.id === 'kidney_stone'; });
+      if (meHasKidney) html += '<div class="muted">饮水目标：' + (p.waterGoal || 2000) + 'ml/天</div>';
+      if (p.updatedAt) {
+        html += '<div class="muted" style="font-size:12px">档案更新于 ' + esc(updatedAgo(p.updatedAt)) + '</div>';
+      }
     } else {
       html += '<div class="muted">尚未填写，点此完善（建议必填手术日期与结石类型）</div>';
     }
     html += '</div>';
 
+    html += '<div class="sec-title">健康资料</div>';
     html += '<div class="card" onclick="App.openReportOCR()" style="cursor:pointer"><div class="row-between"><h2>🏥 出院记录识别</h2><span class="muted">自动填档 ›</span></div><div class="muted">拍照或粘贴出院记录文字，自动提取信息填入个人档案与报告。</div></div>';
 
     html += '<div class="card" onclick="App.openReports()" style="cursor:pointer"><div class="row-between"><h2>📄 检查报告</h2><span class="muted">' + reports.length + ' 份 ›</span></div><div class="muted">上传报告图片与关键指标，随时回看</div></div>';
@@ -514,10 +583,12 @@
     const aiStatus = (ai.enabled && ai.apiKey) ? '已启用' : '未启用';
     html += '<div class="card" onclick="App.openAISettings()" style="cursor:pointer"><div class="row-between"><h2>🤖 AI 助手设置</h2><span class="muted">' + aiStatus + ' ›</span></div><div class="muted">接入大模型后可自由提问、解读报告。默认关闭，启用需填写 API Key，数据策略本地优先。</div></div>';
 
+    html += '<div class="sec-title">数据与设置</div>';
     html += '<div class="card"><h2>💾 数据备份</h2><p class="muted">数据只存在本机。换手机前请导出备份，再导入新手机。</p>';
     html += '<div style="display:flex;gap:8px"><button class="btn secondary sm" onclick="App.exportBackup()">导出备份</button><button class="btn secondary sm" onclick="App.importBackup()">导入备份</button></div></div>';
 
     html += '<div class="card"><h2>ℹ️ 关于与免责</h2><p class="muted" style="white-space:pre-line">本应用所有内容仅为健康信息整理与通用建议，不能替代医生诊断与治疗。如出现剧烈疼痛、发热、持续血尿等请及时就医。\n\n所有数据仅保存在你本机浏览器，不会上传任何服务器。</p></div>';
+    html += '<div class="card"><h2>📌 应用版本</h2><p class="muted">当前版本 <b>' + APP_VERSION + '</b>。若与最新发布版本不符，请完全关闭应用后重新打开（或下拉刷新）以加载新版本。</p></div>';
     view.innerHTML = html;
   }
   function openProfileForm() {
@@ -526,12 +597,16 @@
       : (p.stoneType ? [{ id: 'kidney_stone', stoneType: p.stoneType, surgeryDate: p.surgeryDate, surgeryType: p.surgeryType, affectedSide: p.affectedSide }] : []);
     const hasKidney = conds.some(function (c) { return c.id === 'kidney_stone'; });
     const hasTooth = conds.some(function (c) { return c.id === 'wisdom_tooth'; });
+    const hasHyper = conds.some(function (c) { return c.id === 'hypertension'; });
     const kc = conds.find(function (c) { return c.id === 'kidney_stone'; }) || {};
     const tc = conds.find(function (c) { return c.id === 'wisdom_tooth'; }) || {};
+    const hc = conds.find(function (c) { return c.id === 'hypertension'; }) || {};
+    const hmeds = hc.meds || [];
     const st = kc.stoneType || 'unknown';
     const side = kc.affectedSide || '';
     const tstage = tc.stage || 'inflammation';
     const tmeds = tc.meds || [];
+    const tmedsEnd = tc.medsEnd || '';
     let html = '<h2>👤 个人档案</h2>';
     html += field('姓名', '<input type="text" id="p_name" value="' + esc(p.name || '') + '" placeholder="选填">');
     html += '<div class="field"><label>性别</label><div class="chip-row">' + chips('gender', ['男', '女'], p.gender || '') + '</div></div>';
@@ -539,9 +614,10 @@
     // 病种多选
     html += '<div class="field"><label>我的病种（可多选）</label>' +
       '<label class="chk"><input type="checkbox" name="cond" value="kidney_stone"' + (hasKidney ? ' checked' : '') + ' onchange="App.toggleCondFields()"> 肾结石</label>' +
-      '<label class="chk"><input type="checkbox" name="cond" value="wisdom_tooth"' + (hasTooth ? ' checked' : '') + ' onchange="App.toggleCondFields()"> 智齿发炎</label></div>';
-    // 肾结石字段
-    let kHtml = '';
+      '<label class="chk"><input type="checkbox" name="cond" value="wisdom_tooth"' + (hasTooth ? ' checked' : '') + ' onchange="App.toggleCondFields()"> 智齿发炎</label>' +
+      '<label class="chk"><input type="checkbox" name="cond" value="hypertension"' + (hasHyper ? ' checked' : '') + ' onchange="App.toggleCondFields()"> 高血压</label></div>';
+    // 肾结石字段（标题条 + 青色底；饮水目标属肾结石专属，一并放进本块）
+    let kHtml = '<div class="cond-head kidney">🩺 肾结石</div>';
     kHtml += field('手术日期', '<input type="date" id="p_surgery" value="' + esc(kc.surgeryDate || '') + '">');
     kHtml += field('手术方式', '<input type="text" id="p_surgery_type" value="' + esc(kc.surgeryType || '') + '" placeholder="如 经尿道输尿管软镜钬激光碎石术">');
     kHtml += '<div class="field"><label>结石类型</label><select id="p_stone">' +
@@ -554,19 +630,32 @@
       '<option value="左侧"' + (side === '左侧' ? ' selected' : '') + '>左侧</option>' +
       '<option value="右侧"' + (side === '右侧' ? ' selected' : '') + '>右侧</option>' +
       '<option value="双侧"' + (side === '双侧' ? ' selected' : '') + '>双侧</option></select></div>';
-    html += '<div id="kidney_fields" class="cond-block"' + (hasKidney ? '' : ' style="display:none"') + '>' + kHtml + '</div>';
-    // 智齿字段
-    let tHtml = '';
+    kHtml += field('饮水目标(ml/天)', '<input type="number" id="p_water" value="' + (p.waterGoal || 2000) + '" inputmode="numeric">');
+    html += '<div id="kidney_fields" class="cond-block kidney"' + (hasKidney ? '' : ' style="display:none"') + '>' + kHtml + '</div>';
+    // 智齿字段（标题条 + 橙色底）
+    let tHtml = '<div class="cond-head tooth">🦷 智齿发炎</div>';
     const stages = [['inflammation', '发炎期'], ['post_extraction', '拔牙后'], ['recovery', '恢复期']];
     tHtml += '<div class="field"><label>当前阶段</label><div class="chip-row">' + stages.map(function (s) {
       const sel = (tstage === s[0]) ? ' checked' : '';
-      return '<label class="chip' + (tstage === s[0] ? ' sel' : '') + '"><input type="radio" name="tstage" value="' + s[0] + '"' + sel + '>' + s[1] + '</label>';
+      return '<label class="chip' + (tstage === s[0] ? ' sel' : '') + '" onclick="App.pickChip(this)"><input type="radio" name="tstage" value="' + s[0] + '"' + sel + '>' + s[1] + '</label>';
     }).join('') + '</div></div>';
     tHtml += '<div class="field"><label>正在服用的消炎药</label>' +
       '<label class="chk"><input type="checkbox" name="tmeds" value="甲硝唑"' + (tmeds.indexOf('甲硝唑') >= 0 ? ' checked' : '') + '> 甲硝唑</label>' +
       '<label class="chk"><input type="checkbox" name="tmeds" value="头孢"' + (tmeds.indexOf('头孢') >= 0 ? ' checked' : '') + '> 头孢</label></div>';
-    html += '<div id="tooth_fields" class="cond-block"' + (hasTooth ? '' : ' style="display:none"') + '>' + tHtml + '</div>';
-    html += field('饮水目标(ml/天)', '<input type="number" id="p_water" value="' + (p.waterGoal || 2000) + '" inputmode="numeric">');
+    tHtml += field('消炎药预计用到', '<input type="date" id="p_meds_end" value="' + esc(tmedsEnd) + '">');
+    tHtml += '<div class="muted" style="font-size:12px;margin-top:-2px">到期只会在首页提醒你确认，不会自动停药。</div>';
+    html += '<div id="tooth_fields" class="cond-block tooth"' + (hasTooth ? '' : ' style="display:none"') + '>' + tHtml + '</div>';
+    // 高血压字段（标题条 + 红色底）
+    let hHtml = '<div class="cond-head hypertension">🫀 高血压</div>';
+    hHtml += '<div class="field"><label>正在服用的降压药（选填；登记后启用"西柚/柚子红线"提醒）</label>' +
+      '<label class="chk"><input type="checkbox" name="hmeds" value="钙拮抗剂(氨氯地平等)"' + (hmeds.indexOf('钙拮抗剂(氨氯地平等)') >= 0 ? ' checked' : '') + '> 钙拮抗剂(氨氯地平等)</label>' +
+      '<label class="chk"><input type="checkbox" name="hmeds" value="ACEI(依那普利等)"' + (hmeds.indexOf('ACEI(依那普利等)') >= 0 ? ' checked' : '') + '> ACEI(依那普利等)</label>' +
+      '<label class="chk"><input type="checkbox" name="hmeds" value="ARB(氯沙坦等)"' + (hmeds.indexOf('ARB(氯沙坦等)') >= 0 ? ' checked' : '') + '> ARB(氯沙坦等)</label>' +
+      '<label class="chk"><input type="checkbox" name="hmeds" value="利尿剂(氢氯噻嗪等)"' + (hmeds.indexOf('利尿剂(氢氯噻嗪等)') >= 0 ? ' checked' : '') + '> 利尿剂(氢氯噻嗪等)</label>' +
+      '<label class="chk"><input type="checkbox" name="hmeds" value="β阻滞剂(美托洛尔等)"' + (hmeds.indexOf('β阻滞剂(美托洛尔等)') >= 0 ? ' checked' : '') + '> β阻滞剂(美托洛尔等)</label>' +
+      '<label class="chk"><input type="checkbox" name="hmeds" value="其他"' + (hmeds.indexOf('其他') >= 0 ? ' checked' : '') + '> 其他</label></div>';
+    hHtml += '<div class="muted" style="font-size:12px;margin-top:-2px">当前未登记药物时，西柚红线不会触发；一旦开始服药请回来勾选，以便获得危险交互提醒。</div>';
+    html += '<div id="hypertension_fields" class="cond-block hypertension"' + (hasHyper ? '' : ' style="display:none"') + '>' + hHtml + '</div>';
     html += '<div class="modal-actions"><button class="btn ghost" onclick="App.closeModal()">取消</button><button class="btn" onclick="App.saveProfile()">保存</button></div>';
     openModal(html);
   }
@@ -575,27 +664,163 @@
     p.name = val('p_name').trim();
     p.gender = checked('gender');
     p.age = val('p_age').trim();
-    p.waterGoal = Number(val('p_water')) || 2000;
+    const oldConds = p.conditions || [];
     const cdVals = checkedValues('cond');
     const conds = [];
     if (cdVals.indexOf('kidney_stone') >= 0) {
       const stoneType = val('p_stone');
       conds.push({ id: 'kidney_stone', stoneType: stoneType, surgeryDate: val('p_surgery'), surgeryType: val('p_surgery_type').trim(), affectedSide: val('p_side'), stage: 'post_surgery' });
       p.stoneType = stoneType; p.surgeryDate = val('p_surgery'); p.surgeryType = val('p_surgery_type').trim(); p.affectedSide = val('p_side');
+      // 饮水目标仅在勾选肾结石时更新，避免取消勾选后被默认 2000 覆盖
+      p.waterGoal = Number(val('p_water')) || p.waterGoal || 2000;
     } else {
       delete p.stoneType; delete p.surgeryDate; delete p.surgeryType; delete p.affectedSide;
     }
     if (cdVals.indexOf('wisdom_tooth') >= 0) {
-      conds.push({ id: 'wisdom_tooth', stage: checked('tstage') || 'inflammation', meds: checkedValues('tmeds'), startDate: Store.todayStr() });
+      // startDate 保留首次填写值，避免每次保存都被重置成今天
+      const oldT = oldConds.filter(function (c) { return c.id === 'wisdom_tooth'; })[0] || {};
+      conds.push({
+        id: 'wisdom_tooth',
+        stage: checked('tstage') || 'inflammation',
+        meds: checkedValues('tmeds'),
+        medsEnd: val('p_meds_end') || '',
+        startDate: oldT.startDate || Store.todayStr()
+      });
+    }
+    if (cdVals.indexOf('hypertension') >= 0) {
+      const oldH = oldConds.filter(function (c) { return c.id === 'hypertension'; })[0] || {};
+      conds.push({
+        id: 'hypertension',
+        meds: checkedValues('hmeds'),
+        startDate: oldH.startDate || Store.todayStr()
+      });
     }
     p.conditions = conds;
     p.diagnosis = conds.map(function (c) {
       if (c.id === 'kidney_stone') return '肾结石';
       if (c.id === 'wisdom_tooth') return '智齿发炎';
+      if (c.id === 'hypertension') return '高血压';
       return c.id;
     }).join('、') || '未明确';
+    p.updatedAt = new Date().toISOString();
     Store.saveProfile(p);
     closeModal(); toast('已保存档案'); go('me');
+  }
+
+  // ---------- 病种状态快速更新（不必打开完整档案表单） ----------
+  function updatedAgo(iso) {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '未知';
+    const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+    if (days <= 0) return '今天';
+    if (days === 1) return '昨天';
+    if (days < 30) return days + ' 天前';
+    return Math.floor(days / 30) + ' 个月前';
+  }
+  function findToothCond(p) {
+    return ((p && p.conditions) || []).filter(function (c) { return c.id === 'wisdom_tooth'; })[0] || null;
+  }
+  function stageName(s) {
+    return (Knowledge.CONDITIONS.wisdom_tooth.stages[s] || {}).name || '发炎期';
+  }
+  function quickEditStage() {
+    const p = Store.getProfile() || {};
+    const tc = findToothCond(p);
+    if (!tc) { toast('请先在档案里勾选「智齿发炎」'); return; }
+    const stages = [['inflammation', '发炎期'], ['post_extraction', '拔牙后'], ['recovery', '恢复期']];
+    const cur = tc.stage || 'inflammation';
+    let html = '<h2>🦷 更新智齿阶段</h2>';
+    html += '<div class="field"><label>当前阶段</label><div class="chip-row">' + stages.map(function (s) {
+      return '<label class="chip' + (cur === s[0] ? ' sel' : '') + '" onclick="App.pickChip(this)"><input type="radio" name="qstage" value="' + s[0] + '"' + (cur === s[0] ? ' checked' : '') + '>' + s[1] + '</label>';
+    }).join('') + '</div></div>';
+    html += '<div class="modal-actions"><button class="btn ghost" onclick="App.closeModal()">取消</button><button class="btn" onclick="App.saveQuickStage()">保存</button></div>';
+    openModal(html);
+  }
+  function saveQuickStage() {
+    const p = Store.getProfile() || {};
+    const tc = findToothCond(p);
+    if (!tc) { closeModal(); return; }
+    tc.stage = checked('qstage') || tc.stage;
+    p.updatedAt = new Date().toISOString();
+    Store.saveProfile(p);
+    closeModal(); toast('阶段已更新为「' + stageName(tc.stage) + '」'); go('me');
+  }
+  function quickEditMeds() {
+    const p = Store.getProfile() || {};
+    const tc = findToothCond(p);
+    if (!tc) { toast('请先在档案里勾选「智齿发炎」'); return; }
+    const meds = tc.meds || [];
+    let html = '<h2>💊 更新消炎药</h2>';
+    html += '<div class="field"><label>正在服用</label>' +
+      '<label class="chk"><input type="checkbox" name="qmeds" value="甲硝唑"' + (meds.indexOf('甲硝唑') >= 0 ? ' checked' : '') + '> 甲硝唑</label>' +
+      '<label class="chk"><input type="checkbox" name="qmeds" value="头孢"' + (meds.indexOf('头孢') >= 0 ? ' checked' : '') + '> 头孢</label></div>';
+    html += field('预计用到', '<input type="date" id="q_meds_end" value="' + esc(tc.medsEnd || '') + '">');
+    html += '<div class="muted" style="font-size:12px">到期只会在首页提醒你确认，不会自动停药。</div>';
+    html += '<div class="modal-actions"><button class="btn ghost" onclick="App.closeModal()">取消</button><button class="btn" onclick="App.saveQuickMeds()">保存</button></div>';
+    openModal(html);
+  }
+  function saveQuickMeds() {
+    const p = Store.getProfile() || {};
+    const tc = findToothCond(p);
+    if (!tc) { closeModal(); return; }
+    tc.meds = checkedValues('qmeds');
+    tc.medsEnd = val('q_meds_end') || '';
+    p.updatedAt = new Date().toISOString();
+    Store.saveProfile(p);
+    closeModal(); toast('用药已更新'); go('me');
+  }
+  // 消炎药到期提醒：只提示，绝不自动改医疗设置
+  function medsExpiryNotice() {
+    const p = Store.getProfile();
+    if (!p) return '';
+    const tc = findToothCond(p);
+    if (!tc) return '';
+    const meds = tc.meds || [];
+    if (!meds.length || !tc.medsEnd) return '';
+    if (tc.medsEnd > Store.todayStr()) return '';
+    return '<div class="advice warn"><div class="a-title">💊 消炎药已到期</div>' +
+      '<div class="a-text">你设置的消炎药（' + esc(meds.join('、')) + '）预计用到 ' + esc(tc.medsEnd) + '，现在已经到期。\n还在继续吃吗？</div>' +
+      '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">' +
+      '<button class="btn secondary sm" onclick="App.stopMeds()">已停药</button>' +
+      '<button class="btn secondary sm" onclick="App.quickEditMeds()">还在吃，改日期</button></div></div>';
+  }
+  function stopMeds() {
+    const p = Store.getProfile() || {};
+    const tc = findToothCond(p);
+    if (!tc) return;
+    tc.meds = [];
+    tc.medsEnd = '';
+    p.updatedAt = new Date().toISOString();
+    Store.saveProfile(p);
+    toast('已标记为停药'); go('advice');
+  }
+  function findHyperCond(p) {
+    return ((p && p.conditions) || []).filter(function (c) { return c.id === 'hypertension'; })[0] || null;
+  }
+  function quickEditBpMeds() {
+    const p = Store.getProfile() || {};
+    const hc = findHyperCond(p);
+    if (!hc) { toast('请先在档案里勾选「高血压」'); return; }
+    const meds = hc.meds || [];
+    let html = '<h2>💊 更新降压药</h2>';
+    html += '<div class="field"><label>正在服用（选填）</label>' +
+      '<label class="chk"><input type="checkbox" name="qhmeds" value="钙拮抗剂(氨氯地平等)"' + (meds.indexOf('钙拮抗剂(氨氯地平等)') >= 0 ? ' checked' : '') + '> 钙拮抗剂(氨氯地平等)</label>' +
+      '<label class="chk"><input type="checkbox" name="qhmeds" value="ACEI(依那普利等)"' + (meds.indexOf('ACEI(依那普利等)') >= 0 ? ' checked' : '') + '> ACEI(依那普利等)</label>' +
+      '<label class="chk"><input type="checkbox" name="qhmeds" value="ARB(氯沙坦等)"' + (meds.indexOf('ARB(氯沙坦等)') >= 0 ? ' checked' : '') + '> ARB(氯沙坦等)</label>' +
+      '<label class="chk"><input type="checkbox" name="qhmeds" value="利尿剂(氢氯噻嗪等)"' + (meds.indexOf('利尿剂(氢氯噻嗪等)') >= 0 ? ' checked' : '') + '> 利尿剂(氢氯噻嗪等)</label>' +
+      '<label class="chk"><input type="checkbox" name="qhmeds" value="β阻滞剂(美托洛尔等)"' + (meds.indexOf('β阻滞剂(美托洛尔等)') >= 0 ? ' checked' : '') + '> β阻滞剂(美托洛尔等)</label>' +
+      '<label class="chk"><input type="checkbox" name="qhmeds" value="其他"' + (meds.indexOf('其他') >= 0 ? ' checked' : '') + '> 其他</label></div>';
+    html += '<div class="modal-actions"><button class="btn ghost" onclick="App.closeModal()">取消</button><button class="btn" onclick="App.saveQuickBpMeds()">保存</button></div>';
+    openModal(html);
+  }
+  function saveQuickBpMeds() {
+    const p = Store.getProfile() || {};
+    const hc = findHyperCond(p);
+    if (!hc) { closeModal(); return; }
+    hc.meds = checkedValues('qhmeds');
+    p.updatedAt = new Date().toISOString();
+    Store.saveProfile(p);
+    closeModal(); toast('降压药已更新'); go('me');
   }
 
   // ---------- 时间线 ----------
@@ -605,7 +830,10 @@
       return (b.createdAt || 0) - (a.createdAt || 0);
     });
     if (!list.length) {
-      view.innerHTML = '<div class="empty"><div class="em-ico">📅</div><p>还没有记录</p><p class="muted">点底部「＋」开始记录你的症状、饮食、饮水…</p></div>';
+      view.innerHTML = '<div class="empty"><div class="em-ico">📅</div><p>还没有记录</p>' +
+        '<p class="muted">点底部「＋」开始记录你的症状、饮食、饮水…</p>' +
+        '<div style="margin-top:16px"><button class="btn sm" style="width:auto;padding:0 24px" onclick="App.go(\'record\')">去记录</button></div></div>';
+      playViewAnim();
       return;
     }
     let html = '';
@@ -926,6 +1154,7 @@
   // ---------- 快捷 ----------
   function quickSymptom() { openForm('symptom'); }
   function quickWater() { openForm('water'); }
+  function quickDiet() { openForm('diet'); }
 
   // ---------- init ----------
   function init() {
@@ -947,8 +1176,12 @@
     openReportDetail: openReportDetail, delReport: delReport, openReports: openReports,
     foodSearch: foodSearch,
     openProfileForm: openProfileForm, saveProfile: saveProfile,
+    quickEditStage: quickEditStage, saveQuickStage: saveQuickStage,
+    quickEditMeds: quickEditMeds, saveQuickMeds: saveQuickMeds,
+    stopMeds: stopMeds,
+    quickEditBpMeds: quickEditBpMeds, saveQuickBpMeds: saveQuickBpMeds,
     exportBackup: exportBackup, importBackup: importBackup,
-    delEvent: delEvent, quickSymptom: quickSymptom, quickWater: quickWater,
+    delEvent: delEvent, quickSymptom: quickSymptom, quickWater: quickWater, quickDiet: quickDiet,
     openAIChat: openAIChat, sendAI: sendAI, aiKey: aiKey,
     openAISettings: openAISettings, saveAISettings: saveAISettings,
     openReportOCR: openReportOCR, ocrPreview: ocrPreview,

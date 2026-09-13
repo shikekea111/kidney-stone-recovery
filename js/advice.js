@@ -30,6 +30,7 @@
     conditions.forEach(function (cond) {
       if (cond.id === 'kidney_stone') kidneyAdvice(out, cond, timeline);
       else if (cond.id === 'wisdom_tooth') toothAdvice(out, cond, timeline);
+      else if (cond.id === 'hypertension') hypertensionAdvice(out, cond, timeline);
     });
     // 近期饮食忌口（合并判定，标注原因）
     recentDietAdvice(out, conditions, timeline);
@@ -140,6 +141,21 @@
     if (cond.meds && cond.meds.length) {
       out.push({ level: 'warn', title: '用药警示·严禁饮酒', text: '你正在服用消炎药（' + cond.meds.join('、') + '），严禁饮酒：酒精会引发双硫仑样反应，严重可致命。同时忌辛辣、坚硬食物。' });
     }
+  }
+
+  // ---------- 高血压模块 ----------
+  function hypertensionAdvice(out, cond, timeline) {
+    // ① 护理建议
+    out.push({ level: 'info', title: '高血压·日常护理', text: '① 严格限盐：每天食盐<5克，少吃腌制、加工、外卖等高盐食物；② 控制体重、规律有氧运动（如快走）；③ 戒烟，限制饮酒；④ 家庭自备血压计，定期监测并记录；⑤ 遵医嘱服药，切勿因"血压正常"就擅自停药。' });
+    // ② 用药警示（西柚红线）
+    const meds = cond.meds || [];
+    if (meds.length) {
+      out.push({ level: 'warn', title: '用药警示·降压药与西柚红线', text: '你正在服用降压药（' + meds.join('、') + '）：\n• 严禁吃西柚/柚子——其呋喃香豆素会抑制药物代谢，使降压药（尤其钙拮抗剂）药效骤增，可致血压骤降甚至休克。\n• 按时服药，切勿因"血压正常"就擅自停药。\n• 定期复诊，监测血压与电解质。' });
+    } else {
+      out.push({ level: 'info', title: '用药警示·待补充', text: '你尚未登记正在服用的降压药。若医生已开具降压药，请到「我的 → 个人档案 → 高血压」补充药物名称，以便启用"西柚/柚子红线"提醒与用药警示。' });
+    }
+    // ③ 忌口食物提醒
+    out.push({ level: 'warn', title: '高血压·忌口与限量', text: '忌口（尽量不吃）：高盐食物（盐、酱油、味精、咸菜、腊肉、香肠、皮蛋、咸鸭蛋、薯片、加工肉）；西柚、柚子（尤其服药期间）。\n限量（适量）：红肉与肥肉、油炸食品、动物油（黄油/奶油）、酒精、含咖啡因饮品（咖啡、浓茶、可乐）、高糖甜点与饮料。' });
   }
 
   // ---------- 近期饮食忌口（合并判定，标注原因） ----------
