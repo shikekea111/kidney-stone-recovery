@@ -10,6 +10,8 @@
   const LS_TIMELINE = 'ks_timeline';
   const LS_REPORTS = 'ks_reports';
   const LS_AI = 'ks_ai';
+  const LS_USERFOODS = 'ks_user_foods';
+  const LS_PENDING = 'ks_pending_foods';
 
   function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -220,6 +222,32 @@
     return true;
   }
 
+  // ---------- 用户自定义食物 & 待补充清单 ----------
+  function getUserFoods() {
+    try { return JSON.parse(localStorage.getItem(LS_USERFOODS)) || []; }
+    catch (e) { return []; }
+  }
+  function addUserFood(f) {
+    if (!f || !f.name) return f;
+    const list = getUserFoods();
+    if (list.some(function (x) { return x.name === f.name; })) return f;
+    list.push(f);
+    localStorage.setItem(LS_USERFOODS, JSON.stringify(list));
+    return f;
+  }
+  function getPendingFoods() {
+    try { return JSON.parse(localStorage.getItem(LS_PENDING)) || []; }
+    catch (e) { return []; }
+  }
+  function addPendingFood(word) {
+    const w = String(word || '').trim();
+    if (!w) return;
+    const list = getPendingFoods();
+    if (list.indexOf(w) >= 0) return;
+    list.push(w);
+    localStorage.setItem(LS_PENDING, JSON.stringify(list));
+  }
+
   const Store = {
     uid: uid, todayStr: todayStr, nowTime: nowTime,
     getProfile: getProfile, saveProfile: saveProfile,
@@ -228,7 +256,9 @@
     getReports: getReports, addReport: addReport, deleteReport: deleteReport,
     putImage: putImage, getImage: getImage, deleteImage: deleteImage,
     exportAll: exportAll, importAll: importAll,
-    getAIConfig: getAIConfig, saveAIConfig: saveAIConfig
+    getAIConfig: getAIConfig, saveAIConfig: saveAIConfig,
+    getUserFoods: getUserFoods, addUserFood: addUserFood,
+    getPendingFoods: getPendingFoods, addPendingFood: addPendingFood
   };
   global.Store = Store;
 })(window);

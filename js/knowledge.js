@@ -251,7 +251,86 @@
     { name: '西柚', cat: '水果', ox: 'ok', ur: 'ok', note: '含呋喃香豆素，服降压药（钙拮抗剂）期间严禁，否则药效骤增、血压骤降。' },
     { name: '咸鸭蛋', cat: '肉蛋奶', ox: 'ok', ur: 'ok', note: '腌制高盐，高血压严格限制；肾结石亦需少盐。' },
     { name: '热干面', cat: '主食', ox: 'limit', ur: 'ok', note: '武汉特色早餐：碱水面+芝麻酱。芝麻酱草酸与脂肪偏高，尿路结石者适量；高血压注意芝麻酱的钠与脂肪，当作主食适量即可。' },
-    { name: '排骨', cat: '肉蛋奶', ox: 'limit', ur: 'limit', note: '猪排骨属红肉，适量；带脂肪，高血压限量、结石者亦勿过量。炖汤后撇去浮油更健康。' }
+    { name: '排骨', cat: '肉蛋奶', ox: 'limit', ur: 'limit', note: '猪排骨属红肉，适量；带脂肪，高血压限量、结石者亦勿过量。炖汤后撇去浮油更健康。' },
+    { name: '粉条', cat: '主食', ox: 'ok', ur: 'ok', note: '纯淀粉制品（多为红薯/土豆/绿豆淀粉），低草酸低嘌呤，可正常吃；但常与高油高盐同烹（猪肉炖粉条、蚂蚁上树），注意少油少盐；升糖指数偏高，控糖者适量。' },
+    { name: '粉丝', cat: '主食', ox: 'ok', ur: 'ok', note: '多与粉条同类（绿豆/豌豆淀粉），低草酸低嘌呤，可吃；烹调同理少油少盐。' },
+    { name: '宽粉', cat: '主食', ox: 'ok', ur: 'ok', note: '红薯/土豆淀粉制成，与粉条同类，可正常吃，注意烹调方式。' },
+    { name: '酸辣粉', cat: '主食', ox: 'ok', ur: 'ok', note: '红薯粉为主料本可吃，但成品多红油重盐，高血压严格限量、结石者亦少盐少油。' },
+
+    // ===== 高频/带风险常见食物补全（2026-09-16 批量补） =====
+    // —— 蔬菜 ——
+    { name: '丝瓜', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '低草酸低嘌呤，可吃。' },
+    { name: '菜心', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '低草酸，可吃。' },
+    { name: '芥蓝', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '可吃。' },
+    { name: '香椿', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '含亚硝酸盐，焯水后适量吃。' },
+    { name: '韭黄', cat: '蔬菜', ox: 'limit', ur: 'ok', note: '含草酸，适量。' },
+    { name: '豌豆苗', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '嫩苗低草酸，可吃。' },
+    { name: '西洋菜', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '即豆瓣菜，可吃。' },
+    { name: '佛手瓜', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '可吃。' },
+    { name: '凉薯', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '即沙葛，脆甜多水，可吃。' },
+    { name: '菱角', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '淀粉类，适量。' },
+    { name: '慈姑', cat: '蔬菜', ox: 'limit', ur: 'ok', note: '含草酸，适量、焯水。' },
+    { name: '马齿苋', cat: '蔬菜', ox: 'limit', ur: 'ok', note: '含草酸，适量。' },
+    { name: '茴香', cat: '蔬菜', ox: 'ok', ur: 'ok', note: '即茴香苗，可吃。' },
+    // —— 水果 ——
+    { name: '桃子', cat: '水果', ox: 'limit', ur: 'ok', note: '含草酸少量，适量。' },
+    { name: '李子', cat: '水果', ox: 'limit', ur: 'ok', note: '含草酸，适量。' },
+    { name: '杏', cat: '水果', ox: 'limit', ur: 'ok', note: '含草酸，适量。' },
+    { name: '哈密瓜', cat: '水果', ox: 'ok', ur: 'ok', note: '可吃。' },
+    { name: '甜瓜', cat: '水果', ox: 'ok', ur: 'ok', note: '可吃。' },
+    { name: '木瓜', cat: '水果', ox: 'ok', ur: 'ok', note: '适量。' },
+    { name: '火龙果', cat: '水果', ox: 'ok', ur: 'ok', note: '可吃（红心含甜菜红素，不影响结石）。' },
+    { name: '杨桃', cat: '水果', ox: 'avoid', ur: 'ok', note: '⚠️ 杨桃含 caramboxin 神经毒素与草酸，肾功能不全/结石患者可能引发中毒（打嗝、意识障碍甚至致命），严禁食用。' },
+    { name: '牛油果', cat: '水果', ox: 'ok', ur: 'ok', note: '高脂但多为健康 fat，适量。' },
+    { name: '枇杷', cat: '水果', ox: 'ok', ur: 'ok', note: '可吃。' },
+    { name: '甘蔗', cat: '水果', ox: 'ok', ur: 'limit', note: '糖分高，适量。' },
+    { name: '椰子肉', cat: '水果', ox: 'ok', ur: 'ok', note: '即椰肉，高脂，适量。' },
+    { name: '青枣', cat: '水果', ox: 'ok', ur: 'ok', note: '可吃。' },
+    { name: '无花果', cat: '水果', ox: 'limit', ur: 'ok', note: '含草酸与籽，适量。' },
+    // —— 主食/小吃 ——
+    { name: '凉皮', cat: '主食', ox: 'ok', ur: 'ok', note: '主食可吃；调料多油盐，少放。' },
+    { name: '米线', cat: '主食', ox: 'ok', ur: 'ok', note: '米制品主食，可吃。' },
+    { name: '肠粉', cat: '主食', ox: 'ok', ur: 'ok', note: '米制品主食；酱油多则注意少盐。' },
+    { name: '方便面', cat: '主食', ox: 'limit', ur: 'ok', note: '油炸高盐，高血压严格限量、结石者少盐，尽量少吃。' },
+    { name: '烧麦', cat: '主食', ox: 'ok', ur: 'ok', note: '主食，适量。' },
+    { name: '手抓饼', cat: '主食', ox: 'limit', ur: 'ok', note: '油盐较高，适量。' },
+    { name: '螺蛳粉', cat: '主食', ox: 'limit', ur: 'ok', note: '重盐重辣，高血压严格限量、结石少盐，少吃。' },
+    { name: '葱油饼', cat: '主食', ox: 'limit', ur: 'ok', note: '油盐较多，适量。' },
+    { name: '饵丝', cat: '主食', ox: 'ok', ur: 'ok', note: '米制品主食，可吃。' },
+    // —— 肉蛋水产 ——
+    { name: '培根', cat: '肉蛋奶', ox: 'limit', ur: 'limit', note: '腌制高盐高脂，高血压严格限量。' },
+    { name: '火腿', cat: '肉蛋奶', ox: 'limit', ur: 'limit', note: '腌制高盐，高血压严格限量。' },
+    { name: '午餐肉', cat: '肉蛋奶', ox: 'limit', ur: 'limit', note: '加工高盐，高血压严格限量。' },
+    { name: '虾皮', cat: '肉蛋奶', ox: 'limit', ur: 'avoid', note: '高盐且嘌呤高，高血压严格限量、尿酸结石严禁。' },
+    { name: '生蚝', cat: '肉蛋奶', ox: 'ok', ur: 'limit', note: '中嘌呤，尿酸结石适量。' },
+    { name: '牡蛎', cat: '肉蛋奶', ox: 'ok', ur: 'limit', note: '即生蚝，中嘌呤，适量。' },
+    { name: '蛤蜊', cat: '肉蛋奶', ox: 'ok', ur: 'limit', note: '中嘌呤，适量。' },
+    { name: '蛏子', cat: '肉蛋奶', ox: 'ok', ur: 'limit', note: '中嘌呤，适量。' },
+    { name: '牛蛙', cat: '肉蛋奶', ox: 'ok', ur: 'limit', note: '即田鸡，白肉中嘌呤，适量。' },
+    { name: '鱼丸', cat: '肉蛋奶', ox: 'limit', ur: 'limit', note: '加工食品含钠与淀粉，适量。' },
+    { name: '肉丸', cat: '肉蛋奶', ox: 'limit', ur: 'limit', note: '适量。' },
+    { name: '羊奶', cat: '肉蛋奶', ox: 'ok', ur: 'ok', note: '可喝（与牛羊奶同效）。' },
+    // —— 零食饮料 ——
+    { name: '奶茶', cat: '饮品', ox: 'limit', ur: 'limit', note: '高糖高脂+咖啡因，高血压/结石适量，糖友忌。' },
+    { name: '薯条', cat: '零食', ox: 'avoid', ur: 'avoid', note: '油炸高盐，肾结石与高血压都忌。' },
+    { name: '炸鸡', cat: '零食', ox: 'avoid', ur: 'avoid', note: '油炸高脂，忌。' },
+    { name: '辣条', cat: '零食', ox: 'avoid', ur: 'avoid', note: '高盐辣加工食品，忌。' },
+    { name: '蜜饯', cat: '零食', ox: 'limit', ur: 'avoid', note: '高糖高盐腌制，忌。' },
+    { name: '红酒', cat: '饮品', ox: 'limit', ur: 'avoid', note: '酒精升尿酸，尿酸结石严禁、高血压限量。' },
+    { name: '米酒', cat: '饮品', ox: 'limit', ur: 'limit', note: '即酒酿，含酒精，适量/忌。' },
+    { name: '功能饮料', cat: '饮品', ox: 'limit', ur: 'ok', note: '含咖啡因与糖，适量。' },
+    { name: '蜂蜜水', cat: '饮品', ox: 'ok', ur: 'limit', note: '糖分高，适量。' },
+    { name: '凉茶', cat: '饮品', ox: 'ok', ur: 'ok', note: '适量（含糖款注意）。' },
+    // —— 调料 ——
+    { name: '蚝油', cat: '调料', ox: 'limit', ur: 'limit', note: '高钠，少放。' },
+    { name: '豆瓣酱', cat: '调料', ox: 'limit', ur: 'limit', note: '高钠，少放。' },
+    { name: '辣椒酱', cat: '调料', ox: 'limit', ur: 'ok', note: '辣且偏咸，发炎期忌、高血压少盐。' },
+    { name: '芝麻酱', cat: '调料', ox: 'avoid', ur: 'ok', note: '芝麻高草酸，草酸钙结石忌；高血压注意其脂肪与钠，当作调料少量。' },
+    { name: '沙拉酱', cat: '调料', ox: 'limit', ur: 'limit', note: '高脂高糖，适量。' },
+    { name: '白糖', cat: '调料', ox: 'ok', ur: 'avoid', note: '糖分高，适量。' },
+    { name: '红糖', cat: '调料', ox: 'ok', ur: 'avoid', note: '糖分高，适量。' },
+    { name: '料酒', cat: '调料', ox: 'ok', ur: 'limit', note: '含酒精烹调，适量。' },
+    { name: '花生酱', cat: '调料', ox: 'avoid', ur: 'limit', note: '花生高草酸，草酸钙结石忌、适量。' }
   ];
 
   // ===== 食物属性标签：用于智齿等按"物理/刺激属性"判定（与肾结石的化学维度 ox/ur 解耦） =====
@@ -273,7 +352,19 @@
     '猪肉': ['high_fat'], '排骨': ['high_fat'], '羊肉': ['high_fat'], '鸭肉': ['high_fat'], '鹅肉': ['high_fat'],
     '黄油': ['high_fat'], '奶油': ['high_fat'],
     '咖啡': ['caffeine'], '浓茶': ['caffeine'], '可可': ['caffeine'],
-    '柚子': ['grapefruit'], '西柚': ['grapefruit']
+    '柚子': ['grapefruit'], '西柚': ['grapefruit'],
+    '酸辣粉': ['high_sodium', 'spicy'],
+    // —— 2026-09-16 批量补标签 ——
+    '方便面': ['high_sodium'], '螺蛳粉': ['high_sodium', 'spicy'],
+    '培根': ['high_sodium', 'high_fat'], '火腿': ['high_sodium'], '午餐肉': ['high_sodium', 'high_fat'],
+    '虾皮': ['high_sodium'], '蚝油': ['high_sodium'], '豆瓣酱': ['high_sodium'],
+    '薯条': ['crispy', 'high_fat', 'high_sodium'], '炸鸡': ['crispy', 'high_fat'],
+    '辣条': ['high_sodium', 'spicy'], '辣椒酱': ['spicy', 'high_sodium'],
+    '蜜饯': ['sugar', 'high_sodium'], '沙拉酱': ['high_fat', 'sugar'],
+    '芝麻酱': ['high_fat', 'high_sodium'], '花生酱': ['high_fat'],
+    '白糖': ['sugar'], '红糖': ['sugar'],
+    '红酒': ['alcohol'], '米酒': ['alcohol'], '料酒': ['alcohol'],
+    '功能饮料': ['caffeine', 'sugar'], '奶茶': ['sugar', 'caffeine']
   };
 
   // ===== 多病种规则引擎 =====
@@ -420,6 +511,19 @@
     return { verdict: worst, label: verdictLabel(worst), reasons: reasons, note: note, name: food.name, cat: food.cat };
   }
 
+  // 合并用户自定义食物（记饮食时手动补录），运行时注入使搜索/判定立即生效
+  function addUserFood(f) {
+    if (!f || !f.name) return null;
+    if (MAP[f.name]) return MAP[f.name];
+    ALL_FOODS.push(f);
+    MAP[f.name] = f;
+    return f;
+  }
+  function mergeUserFoods(list) {
+    (list || []).forEach(function (f) { addUserFood(f); });
+    return ALL_FOODS.length;
+  }
+
   global.Knowledge = {
     FOODS: ALL_FOODS,
     EXTRA_FOODS: EXTRA_FOODS,
@@ -428,6 +532,8 @@
     findFood: findFood,
     judge: judge,
     getConditions: getConditions,
-    verdictLabel: verdictLabel
+    verdictLabel: verdictLabel,
+    addUserFood: addUserFood,
+    mergeUserFoods: mergeUserFoods
   };
 })(window);

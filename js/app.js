@@ -10,7 +10,7 @@
   let currentTab = 'advice';
   let dietPicks = [];
   let reportPendingBlob = null;
-  const APP_VERSION = '2.5.0';
+  const APP_VERSION = '2.7.0';
 
   // ---------- helpers ----------
   function esc(s) {
@@ -307,7 +307,8 @@
         '<div style="margin:6px 0 10px"><button class="btn sm" onclick="App.addAllParts()">全部加入（' + parts.length + '）</button></div>';
     }
     if (!html) {
-      html = '<div class="ocr-hint" style="color:#b3232b;line-height:1.6">未收录「' + esc(q) + '」。可尝试：<br>① 输入更常见的食材名（如 番茄、鸡蛋、米饭、猪肉）；<br>② 把一餐拆成多种食材分别输入（如「土豆」「藕」「排骨」）；<br>③ 直接输入整道菜名，应用会自动识别其中食材（如「土豆藕炖排骨」）。</div>';
+      html = unrecCardHtml(q, 'diet');
+      Store.addPendingFood(q);
     }
     box.innerHTML = html;
   }
@@ -349,6 +350,56 @@
       detail: { foods: dietPicks.map(function (p) { return { name: p.name }; }), note: val('f_note').trim(), meal: checked('meal') }
     });
     closeModal(); toast('已保存饮食记录'); go('advice');
+  }
+
+  // ---------- 未收录食物：手动记一笔并加入"我的食物" ----------
+  function verdictLabelLoc(v) {
+    if (v === 'avoid') return '忌口/少吃';
+    if (v === 'limit') return '适量';
+    return '可吃';
+  }
+  function unrecCardHtml(q, ctx) {
+    const catId = ctx === 'food' ? 'uc_cat_f' : 'uc_cat';
+    const vId = ctx === 'food' ? 'uc_verdict_f' : 'uc_verdict';
+    const btn = ctx === 'food' ? 'App.addCustomFood()' : 'App.addCustomPick()';
+    const cats = ['蔬菜', '水果', '肉蛋奶', '主食', '零食', '饮品', '调料', '坚果', '补剂', '草药茶'];
+    const catOpts = cats.map(function (c) { return '<option value="' + c + '">' + c + '</option>'; }).join('');
+    return '<div class="ocr-hint" style="border:1px dashed #d98; padding:10px; border-radius:8px; line-height:1.7; margin-top:6px">' +
+      '没找到「<b>' + esc(q) + '</b>」。可直接记一笔（下次自动识别）：' +
+      '<div class="field" style="margin:8px 0"><label>分类</label><select id="' + catId + '" class="uc-sel">' + catOpts + '</select></div>' +
+      '<div class="field"><label>你判断能不能吃</label><div class="chip-row" id="' + vId + '">' +
+      '<span class="chip active" data-v="ok" onclick="App.ucVerdict(this)">可吃</span>' +
+      '<span class="chip" data-v="limit" onclick="App.ucVerdict(this)">适量</span>' +
+      '<span class="chip" data-v="avoid" onclick="App.ucVerdict(this)">忌口</span></div></div>' +
+      '<button class="btn sm" onclick="' + btn + '">＋ 记一笔并加入我的食物</button>' +
+      '</div>';
+  }
+  function ucVerdict(el) {
+    const row = el.parentNode;
+    Array.prototype.forEach.call(row.children, function (c) { if (c.classList) c.classList.remove('active'); });
+    el.classList.add('active');
+  }
+  function ucBuildFood(q, catId, vId) {
+    const cat = (val(catId) || '其他');
+    const vEl = document.querySelector('#' + vId + ' .chip.active');
+    const v = vEl ? vEl.dataset.v : 'ok';
+    return { name: q, cat: cat, ox: v, ur: v, note: '（自定义食物，你标记为' + verdictLabelLoc(v) + '）', userAdded: true };
+  }
+  function addCustomPick() {
+    const q = (val('diet_search') || '').trim();
+    if (!q) return;
+    const food = ucBuildFood(q, 'uc_cat', 'uc_verdict');
+    Knowledge.addUserFood(food); Store.addUserFood(food); Store.addPendingFood(q);
+    addPick(q);
+    toast('已记录「' + q + '」并加入我的食物');
+  }
+  function addCustomFood() {
+    const q = (val('food_q') || '').trim();
+    if (!q) return;
+    const food = ucBuildFood(q, 'uc_cat_f', 'uc_verdict_f');
+    Knowledge.addUserFood(food); Store.addUserFood(food); Store.addPendingFood(q);
+    foodSearch();
+    toast('已加入我的食物');
   }
 
   // ---------- 饮水 ----------
@@ -504,7 +555,8 @@
     }
     if (!list.length) {
       box.innerHTML = '<div class="empty"><div class="em-ico">🔍</div><p>没找到「' + esc(q) + '」</p>' +
-        '<p class="muted">换个名字试试，或从下面常见的里面选</p></div>' + hotFoodHtml();
+        '<p class="muted">换个名字试试，或从下面常见的里面选</p></div>' + hotFoodHtml() + unrecCardHtml(q, 'food');
+      Store.addPendingFood(q);
       return;
     }
     let pre = '';
@@ -588,6 +640,13 @@
     html += '<div style="display:flex;gap:8px"><button class="btn secondary sm" onclick="App.exportBackup()">导出备份</button><button class="btn secondary sm" onclick="App.importBackup()">导入备份</button></div></div>';
 
     html += '<div class="card"><h2>ℹ️ 关于与免责</h2><p class="muted" style="white-space:pre-line">本应用所有内容仅为健康信息整理与通用建议，不能替代医生诊断与治疗。如出现剧烈疼痛、发热、持续血尿等请及时就医。\n\n所有数据仅保存在你本机浏览器，不会上传任何服务器。</p></div>';
+
+    const pend = Store.getPendingFoods();
+    if (pend.length) {
+      html += '<div class="card"><h2>📝 待补充食物</h2><p class="muted">你在记饮食/查询时搜不到、已自动收集的词（共 ' + pend.length + ' 条）。可把这些词告诉开发者，批量补入正式食物库：</p>' +
+        '<div class="chip-row" style="justify-content:flex-start;flex-wrap:wrap">' + pend.map(function (w) { return '<span class="chip">' + esc(w) + '</span>'; }).join('') + '</div></div>';
+    }
+
     html += '<div class="card"><h2>📌 应用版本</h2><p class="muted">当前版本 <b>' + APP_VERSION + '</b>。若与最新发布版本不符，请完全关闭应用后重新打开（或下拉刷新）以加载新版本。</p></div>';
     view.innerHTML = html;
   }
@@ -1158,6 +1217,8 @@
 
   // ---------- init ----------
   function init() {
+    // 载入用户自定义食物，使搜索/判定立即生效
+    try { Knowledge.mergeUserFoods(Store.getUserFoods()); } catch (e) {}
     $$('.tab').forEach(function (t) { t.addEventListener('click', function () { go(t.dataset.tab); }); });
     go('advice');
     if ('serviceWorker' in navigator) {
@@ -1175,6 +1236,7 @@
     previewReport: previewReport, saveReport: saveReport,
     openReportDetail: openReportDetail, delReport: delReport, openReports: openReports,
     foodSearch: foodSearch,
+    ucVerdict: ucVerdict, addCustomPick: addCustomPick, addCustomFood: addCustomFood,
     openProfileForm: openProfileForm, saveProfile: saveProfile,
     quickEditStage: quickEditStage, saveQuickStage: saveQuickStage,
     quickEditMeds: quickEditMeds, saveQuickMeds: saveQuickMeds,
