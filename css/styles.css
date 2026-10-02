@@ -403,6 +403,8 @@ input[type="radio"] { display: none; }
 .badge.avoid { background: var(--avoid-bg); color: var(--avoid); }
 .badge.limit { background: var(--limit-bg); color: var(--limit); }
 .badge.ok { background: var(--ok-bg); color: var(--ok); }
+.badge.recommend { background: #16a34a; color: #fff; box-shadow: 0 1px 3px rgba(22,163,74,.35); }
+.food-reason.rec { color: #15803d; }
 
 /* ============================================================
    多病种：字段块 / 标题条 / 快速更新

@@ -10,7 +10,7 @@
   let currentTab = 'advice';
   let dietPicks = [];
   let reportPendingBlob = null;
-  const APP_VERSION = '2.7.0';
+  const APP_VERSION = '2.8.0';
 
   // ---------- helpers ----------
   function esc(s) {
@@ -202,7 +202,8 @@
       const pct = Math.max(4, Math.min(100, Number(s.score) || 0));
       html += '<div class="score-meta"><div class="score-level ' + s.level + '">' + s.levelText + '</div>';
       html += '<div class="score-bar"><div class="score-bar-in ' + s.level + '" style="width:' + pct + '%"></div></div>';
-      html += '<div class="score-tags"><span class="badge ok">可吃 ' + s.ok + '</span><span class="badge limit">适量 ' + s.limit + '</span><span class="badge avoid">忌口 ' + s.avoid + '</span></div></div>';
+      const recTag = (s.rec > 0) ? '<span class="badge recommend">推荐 ' + s.rec + '</span>' : '';
+      html += '<div class="score-tags"><span class="badge ok">可吃 ' + s.ok + '</span><span class="badge limit">适量 ' + s.limit + '</span><span class="badge avoid">忌口 ' + s.avoid + '</span>' + recTag + '</div></div>';
       html += '</div>';
       html += '<div class="score-analysis">' + esc(s.analysis) + '</div>';
       if (s.avoidList && s.avoidList.length) {
@@ -295,13 +296,13 @@
     if (exact.length) {
       html += exact.slice(0, 8).map(function (f) {
         const j = Knowledge.judge(f, conds);
-        return '<div class="food-item" onclick="App.addPick(\'' + esc(f.name) + '\')"><div class="food-main"><div class="food-name">' + esc(f.name) + '</div><div class="food-cat">' + esc(f.cat) + '</div></div><span class="badge ' + j.verdict + '">' + j.label + '</span></div>';
+        return '<div class="food-item" onclick="App.addPick(\'' + esc(f.name) + '\')"><div class="food-main"><div class="food-name">' + esc(f.name) + '</div><div class="food-cat">' + esc(f.cat) + '</div></div><span class="badge ' + j.verdict + '">' + j.label + '</span>' + (j.recommended ? '<span class="badge recommend">⭐推荐</span>' : '') + '</div>';
       }).join('');
     }
     if (parts.length) {
       const list = parts.slice(0, 12).map(function (f) {
         const j = Knowledge.judge(f, conds);
-        return '<div class="food-item" onclick="App.addPick(\'' + esc(f.name) + '\')"><div class="food-main"><div class="food-name">' + esc(f.name) + '</div><div class="food-cat">' + esc(f.cat) + '</div></div><span class="badge ' + j.verdict + '">' + j.label + '</span></div>';
+        return '<div class="food-item" onclick="App.addPick(\'' + esc(f.name) + '\')"><div class="food-main"><div class="food-name">' + esc(f.name) + '</div><div class="food-cat">' + esc(f.cat) + '</div></div><span class="badge ' + j.verdict + '">' + j.label + '</span>' + (j.recommended ? '<span class="badge recommend">⭐推荐</span>' : '') + '</div>';
       }).join('');
       html += '<div class="ocr-hint">从「' + esc(q) + '」中识别出以下食材（点选或一键加入）：</div>' + list +
         '<div style="margin:6px 0 10px"><button class="btn sm" onclick="App.addAllParts()">全部加入（' + parts.length + '）</button></div>';
@@ -326,7 +327,7 @@
     const f = Knowledge.findFood(name);
     if (!f) return;
     const j = Knowledge.judge(f, Knowledge.getConditions(p));
-    dietPicks.push({ name: name, verdict: j.verdict, label: j.label, reasons: j.reasons });
+    dietPicks.push({ name: name, verdict: j.verdict, label: j.label, reasons: j.reasons, recommended: j.recommended });
     renderPicks();
     const box = $('#diet_cand'); if (box) box.innerHTML = '';
     const s = $('#diet_search'); if (s) s.value = '';
@@ -339,7 +340,8 @@
         const rn = p.reasons.map(function (x) { return x.conditionName + (x.stageName ? '（' + x.stageName + '）' : ''); }).join('、');
         r = ' <span class="pick-reason">因' + esc(rn) + '</span>';
       }
-      return '<span class="pick"><span class="badge ' + p.verdict + '">' + p.label + '</span>' + esc(p.name) + r + ' <span class="x" onclick="App.removePick(' + i + ')">✕</span></span>';
+      const recBadge = p.recommended ? '<span class="badge recommend">⭐推荐</span>' : '';
+      return '<span class="pick"><span class="badge ' + p.verdict + '">' + p.label + '</span>' + recBadge + esc(p.name) + r + ' <span class="x" onclick="App.removePick(' + i + ')">✕</span></span>';
     }).join('');
   }
   function removePick(i) { dietPicks.splice(i, 1); renderPicks(); }
@@ -567,7 +569,11 @@
       if (j.reasons && j.reasons.length) {
         reasonHtml = '<div class="food-reason">⚠️ ' + j.reasons.map(function (r) { return esc(r.conditionName + (r.stageName ? '（' + r.stageName + '）' : '') + '：' + r.note); }).join('；') + '</div>';
       }
-      return '<div class="food-item"><div class="food-main"><div class="food-name">' + esc(f.name) + '</div><div class="food-cat">' + esc(f.cat) + '</div><div class="food-note">' + esc(f.note) + '</div>' + reasonHtml + '</div><span class="badge ' + j.verdict + '">' + j.label + '</span></div>';
+      let recHtml = '';
+      if (j.recommendReasons && j.recommendReasons.length) {
+        recHtml = '<div class="food-reason rec">👍 推荐理由：' + j.recommendReasons.map(function (r) { return esc(r.conditionName + '：' + r.note); }).join('；') + '</div>';
+      }
+      return '<div class="food-item"><div class="food-main"><div class="food-name">' + esc(f.name) + '</div><div class="food-cat">' + esc(f.cat) + '</div><div class="food-note">' + esc(f.note) + '</div>' + reasonHtml + recHtml + '</div><span class="badge ' + j.verdict + '">' + j.label + '</span>' + (j.recommended ? '<span class="badge recommend">⭐推荐</span>' : '') + '</div>';
     }).join('');
   }
   // 常见食物快捷入口（空结果 / 引导用）
@@ -918,10 +924,11 @@
         const conds = Knowledge.getConditions(Store.getProfile());
         sub = foods.map(function (f) {
           const info = Knowledge.findFood(f.name);
-          let v = 'ok', reasons = [];
-          if (info) { const j = Knowledge.judge(info, conds); v = j.verdict; reasons = j.reasons; }
+          let v = 'ok', reasons = [], rec = false;
+          if (info) { const j = Knowledge.judge(info, conds); v = j.verdict; reasons = j.reasons; rec = j.recommended; }
           const rn = reasons.length ? ' <span class="tl-reason">因' + reasons.map(function (r) { return r.conditionName + (r.stageName ? '（' + r.stageName + '）' : ''); }).join('、') + '</span>' : '';
-          return '<span class="badge ' + v + '">' + Knowledge.verdictLabel(v) + '</span>' + esc(f.name) + rn;
+          const recBadge = rec ? '<span class="badge recommend">⭐推荐</span>' : '';
+          return '<span class="badge ' + v + '">' + Knowledge.verdictLabel(v) + '</span>' + recBadge + esc(f.name) + rn;
         }).join(' ');
         rawSub = true;
       }

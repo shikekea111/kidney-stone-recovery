@@ -1,5 +1,5 @@
 // sw.js - 离线缓存，使应用可"安装"并离线使用
-const CACHE = 'ks-helper-v20';
+const CACHE = 'ks-helper-v21';
 const ASSETS = [
   './',
   './index.html',

@@ -206,13 +206,14 @@
         const info = Knowledge.findFood(name);
         if (!info) return;
         const j = Knowledge.judge(info, conditions);
-        items.push({ name: name, verdict: j.verdict, reasons: j.reasons, note: info.note });
+        items.push({ name: name, verdict: j.verdict, reasons: j.reasons, recommended: j.recommended, note: info.note });
       });
     });
     const total = items.length;
     const ok = items.filter(function (i) { return i.verdict === 'ok'; });
     const limit = items.filter(function (i) { return i.verdict === 'limit'; });
     const avoid = items.filter(function (i) { return i.verdict === 'avoid'; });
+    const rec = items.filter(function (i) { return i.verdict === 'ok' && i.recommended; });
 
     if (total === 0) {
       return {
@@ -249,7 +250,7 @@
     else if (score >= 50) { level = 'info'; levelText = '一般'; }
     else { level = 'warn'; levelText = '需改进'; }
 
-    let analysis = '今天共记录 ' + total + ' 种食物：' + ok.length + ' 种可吃、' + limit.length + ' 种适量、' + avoid.length + ' 种忌口。';
+    let analysis = '今天共记录 ' + total + ' 种食物：' + ok.length + ' 种可吃、' + limit.length + ' 种适量、' + avoid.length + ' 种忌口' + (rec.length ? '、' + rec.length + ' 种推荐吃' : '') + '。';
     if (hasKidney) analysis += '饮水 ' + wtotal + 'ml / 目标 ' + goal + 'ml。';
     if (!conditions.length) analysis += '（未选择病种，按通用参考；到「我的」选病种后更准）';
 
@@ -283,7 +284,7 @@
 
     return {
       date: today, empty: false, score: score, level: level, levelText: levelText,
-      total: total, ok: ok.length, limit: limit.length, avoid: avoid.length,
+      total: total, ok: ok.length, limit: limit.length, avoid: avoid.length, rec: rec.length,
       avoidList: avoid, analysis: analysis, suggestions: suggestions
     };
   }

@@ -367,6 +367,28 @@
     '功能饮料': ['caffeine', 'sugar'], '奶茶': ['sugar', 'caffeine']
   };
 
+  // ===== 有益标签（"推荐"维度，独立于 FOOD_TAGS 的有害标签） =====
+  // 仅当食物判定为"可吃(ok)"时才可能触发推荐，绝不覆盖忌口/适量。
+  // 维度：citrate 枸橼酸 / dietary_calcium 膳食钙 / high_water 高水分利尿 /
+  //       potassium 富钾(DASH) / soft_food 软食温凉 / low_purine 低嘌呤
+  const RECOMMEND_TAGS = {
+    // 枸橼酸：碱化尿液、抑制结石
+    '柠檬': ['citrate'], '橙子': ['citrate'], '柠檬水': ['citrate'],
+    // 高水分利尿
+    '白开水': ['high_water'], '冬瓜': ['high_water'], '黄瓜': ['high_water'],
+    '椰子水': ['high_water', 'potassium'],
+    // 膳食钙：随餐结合草酸
+    '牛奶': ['dietary_calcium'], '酸奶': ['dietary_calcium'],
+    // 富钾：利控压
+    '香蕉': ['potassium'], '哈密瓜': ['potassium'], '牛油果': ['potassium'], '土豆': ['potassium'],
+    // 软食温凉：智齿创面友好
+    '蒸蛋': ['soft_food'], '鸡蛋羹': ['soft_food'], '土豆泥': ['soft_food'], '南瓜糊': ['soft_food'],
+    '小米粥': ['soft_food'], '小米': ['soft_food'], '燕麦粥': ['soft_food'],
+    // 低嘌呤：尿酸友好
+    '荞麦': ['low_purine'], '藜麦': ['low_purine']
+  };
+  function FOODS_RECTAGS_SAFE(name) { return RECOMMEND_TAGS[name] || []; }
+
   // ===== 多病种规则引擎 =====
   // 每个病种提供 judge(food, cond) -> {verdict, note, hardWarn?}
   // 合并原则：取所有病种中最严格（avoid > limit > ok），并记录每条原因（标注来源病种）
@@ -379,6 +401,12 @@
         let note = food.note;
         if (!t || t === 'unknown') note = '（结石成分未明确，暂按草酸钙结石参考；确诊后更准）' + note;
         return { verdict: v, note: note };
+      },
+      recommendTags: {
+        citrate: '含枸橼酸，可碱化尿液、抑制结石形成（无糖柠檬水尤其推荐）',
+        dietary_calcium: '随餐的膳食钙（如奶类）能在肠道结合草酸，反而降低结石风险，比钙片更稳妥',
+        high_water: '充足水分稀释尿液，是防石最核心、最基础的措施',
+        low_purine: '低嘌呤食物代谢负担小，对尿酸结石尤其友好'
       }
     },
     wisdom_tooth: {
@@ -407,6 +435,9 @@
         if (arrIntersect(tags, rules.avoid)) return { verdict: 'avoid', note: rules.avoidNote };
         if (arrIntersect(tags, rules.limit)) return { verdict: 'limit', note: rules.limitNote };
         return { verdict: 'ok', note: '' };
+      },
+      recommendTags: {
+        soft_food: '温凉软食减少咀嚼刺激、利于创面愈合，发炎期与拔牙后尤其合适'
       }
     },
     hypertension: {
@@ -425,6 +456,9 @@
         if (tags.indexOf('caffeine') >= 0) return { verdict: 'limit', note: '咖啡因短期内会升血压，敏感者适量、避免空腹与睡前饮用。' };
         if (tags.indexOf('sugar') >= 0) return { verdict: 'limit', note: '高糖饮食易致肥胖，间接升高血压，建议控制。' };
         return { verdict: 'ok', note: '' };
+      },
+      recommendTags: {
+        potassium: '富钾食物帮助排钠、舒张血管，利于控压（DASH 饮食核心；肾功能不全者遵医嘱控钾）'
       }
     }
   };
@@ -508,7 +542,25 @@
     });
     let note = food.note;
     if (!conditions.length) note = '（未选择病种，暂按通用参考）' + note;
-    return { verdict: worst, label: verdictLabel(worst), reasons: reasons, note: note, name: food.name, cat: food.cat };
+    // 第三遍：仅在 verdict=ok 时收集"推荐"维度（与三档互斥，绝不在忌口/适量食物上出现）
+    let recommended = false;
+    const recommendReasons = [];
+    if (worst === 'ok') {
+      const seenTags = {};
+      conditions.forEach(function (cond) {
+        const def = CONDITIONS[cond.id];
+        if (!def || !def.recommendTags) return;
+        const rtags = FOODS_RECTAGS_SAFE(food.name);
+        rtags.forEach(function (rt) {
+          if (def.recommendTags[rt] && !seenTags[cond.id + ':' + rt]) {
+            seenTags[cond.id + ':' + rt] = true;
+            recommended = true;
+            recommendReasons.push({ condition: cond.id, conditionName: def.name, tag: rt, note: def.recommendTags[rt] });
+          }
+        });
+      });
+    }
+    return { verdict: worst, label: verdictLabel(worst), reasons: reasons, recommended: recommended, recommendReasons: recommendReasons, note: note, name: food.name, cat: food.cat };
   }
 
   // 合并用户自定义食物（记饮食时手动补录），运行时注入使搜索/判定立即生效
