@@ -1,6 +1,17 @@
 # 依赖/工具
 node_modules/
 
+# Capacitor 安卓壳工程（构建产物）
+/www/
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/local.properties
+/android/captures/
+
+# 正式发布签名密钥严禁入库（仅用本地保管 + GitHub Secrets）
+*.jks
+
 # 宣传物料（抖音分享用，本地保留，不进 App 仓库，避免污染源码）
 /video/
 compose_poster.js

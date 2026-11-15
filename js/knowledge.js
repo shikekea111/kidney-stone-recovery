@@ -333,6 +333,37 @@
     { name: '花生酱', cat: '调料', ox: 'avoid', ur: 'limit', note: '花生高草酸，草酸钙结石忌、适量。' }
   ];
 
+  // ===== 地方特色复合菜：整菜结论 + 别名 + 隐藏食材拆解 =====
+  // alias：搜简称也能命中整菜；parts：菜名里写不出来、但真正决定宜忌的汤底与调料。
+  // 为什么需要：只靠"从菜名里找食物名"，襄阳豆腐面只会识别出「豆腐」，
+  // 完全漏掉重盐牛油辣汤，结论会偏松。整菜按最严风险给结论，parts 供记饮食时逐项勾选。
+  const DISH_FOODS = [
+    {
+      name: '襄阳豆腐面', cat: '主食', ox: 'limit', ur: 'limit',
+      alias: ['豆腐面', '襄阳素面', '素豆腐面'],
+      parts: ['面条', '豆腐', '辣椒', '盐', '香菜', '大葱'],
+      note: '襄阳早餐：碱水面＋嫩豆腐（或豆腐泡）＋红油/牛油辣汤，撒香菜葱花。面与豆腐本身问题不大，风险集中在汤底：一碗汤的盐常接近全天 5 克限量，辣油也多。吃法：面可以吃、汤别喝完、少放辣油、别天天当早餐；配白开水，别配黄酒。'
+    },
+    {
+      name: '襄阳牛肉面', cat: '主食', ox: 'limit', ur: 'limit',
+      alias: ['牛肉面', '牛油面', '襄阳牛油面'],
+      parts: ['面条', '牛肉', '辣椒', '盐', '香菜', '大葱'],
+      note: '襄阳特色：碱水面＋牛油红汤＋卤牛肉，重辣重盐。牛肉属红肉、嘌呤中等，牛油饱和脂肪高；汤底钠远高于普通面汤。建议只吃面少喝汤、少辣、牛肉适量、别天天吃；尿酸结石与高血压尤其要控制频率。'
+    },
+    {
+      name: '襄阳牛杂面', cat: '主食', ox: 'limit', ur: 'avoid',
+      alias: ['牛杂面'],
+      parts: ['面条', '动物内脏', '辣椒', '盐', '香菜'],
+      note: '牛杂（肝、肚、肠等）属动物内脏，嘌呤极高，尿酸结石应忌口；汤底同样重盐重辣、牛油多。建议换成豆腐面或牛肉面，且汤别喝完。'
+    },
+    {
+      name: '襄阳黄酒', cat: '饮品', ox: 'limit', ur: 'avoid',
+      alias: ['早酒', '襄阳早酒'],
+      parts: ['黄酒', '米酒'],
+      note: '襄阳早餐常配的低度糯米黄酒（类似酒酿）。仍含酒精：尿酸结石及服消炎药（甲硝唑/头孢）期间严禁，高血压会使血压波动。结石康复期建议一律换成白开水或淡豆浆。'
+    }
+  ];
+
   // ===== 食物属性标签：用于智齿等按"物理/刺激属性"判定（与肾结石的化学维度 ox/ur 解耦） =====
   // hard 坚硬需嚼 / crispy 酥脆碎渣 / sticky 黏 / spicy 辛辣 / coarse 粗纤维需大张口 / acidic 过酸 / sugar 高糖 / alcohol 含酒精
   const FOOD_TAGS = {
@@ -364,7 +395,12 @@
     '芝麻酱': ['high_fat', 'high_sodium'], '花生酱': ['high_fat'],
     '白糖': ['sugar'], '红糖': ['sugar'],
     '红酒': ['alcohol'], '米酒': ['alcohol'], '料酒': ['alcohol'],
-    '功能饮料': ['caffeine', 'sugar'], '奶茶': ['sugar', 'caffeine']
+    '功能饮料': ['caffeine', 'sugar'], '奶茶': ['sugar', 'caffeine'],
+    // —— 襄阳早餐：风险在汤底（高盐/辣/牛油）与配酒，不在面本身 ——
+    '襄阳豆腐面': ['high_sodium', 'spicy', 'high_fat'],
+    '襄阳牛肉面': ['high_sodium', 'spicy', 'high_fat'],
+    '襄阳牛杂面': ['high_sodium', 'spicy', 'high_fat'],
+    '襄阳黄酒': ['alcohol']
   };
 
   // ===== 有益标签（"推荐"维度，独立于 FOOD_TAGS 的有害标签） =====
@@ -465,7 +501,7 @@
 
   function FOODS_TAGS_SAFE(name) { return FOOD_TAGS[name] || []; }
 
-  const ALL_FOODS = FOODS.concat(EXTRA_FOODS);
+  const ALL_FOODS = FOODS.concat(EXTRA_FOODS, DISH_FOODS);
 
   function arrIntersect(a, b) {
     for (let i = 0; i < a.length; i++) { if (b.indexOf(a[i]) >= 0) return true; }
@@ -484,7 +520,10 @@
   }
 
   const MAP = {};
-  ALL_FOODS.forEach(function (f) { MAP[f.name] = f; });
+  ALL_FOODS.forEach(function (f) {
+    MAP[f.name] = f;
+    (f.alias || []).forEach(function (a) { if (!MAP[a]) MAP[a] = f; });
+  });
 
   function findFood(name) {
     if (!name) return null;
@@ -495,6 +534,52 @@
       return f.name.indexOf(n) >= 0 || n.indexOf(f.name) >= 0;
     });
     return hit || null;
+  }
+
+  // 精确收录判断：整名或别名命中才算已收录（供"待补充清单"过滤）
+  function isKnown(name) { return !!MAP[String(name || '').trim()]; }
+
+  // 搜索：名称 / 分类 / 别名，三者任一命中
+  function searchFoods(q) {
+    const s = String(q || '').trim();
+    if (!s) return [];
+    return ALL_FOODS.filter(function (f) {
+      if (f.name.indexOf(s) >= 0 || f.cat.indexOf(s) >= 0) return true;
+      return (f.alias || []).some(function (a) { return a.indexOf(s) >= 0; });
+    });
+  }
+
+  // 找出输入文字里包含的"整道菜"（含简称、前后带数量词也能命中，如"一碗襄阳豆腐面"）
+  function findWholeDish(q) {
+    const s = String(q || '').trim();
+    if (!s) return null;
+    if (MAP[s] && MAP[s].parts) return MAP[s];
+    let best = null, len = 0;
+    ALL_FOODS.forEach(function (f) {
+      if (!f.parts) return;
+      [f.name].concat(f.alias || []).forEach(function (k) {
+        if (k && s.indexOf(k) >= 0 && k.length > len) { best = f; len = k.length; }
+      });
+    });
+    return best;
+  }
+
+  // 拆解：整菜自带的隐藏食材 + 菜名里能直接认出的食材，去重
+  // 返回 { whole: 整菜食物对象|null, parts: 食材对象数组 }
+  function analyzeDish(q) {
+    const s = String(q || '').trim();
+    if (!s) return { whole: null, parts: [] };
+    const whole = findWholeDish(s);
+    const seen = {}, names = [];
+    function push(n) {
+      if (!n || seen[n] || (whole && n === whole.name)) return;
+      seen[n] = true; names.push(n);
+    }
+    if (whole) (whole.parts || []).forEach(push);
+    ALL_FOODS.forEach(function (f) {
+      if (f.name.length >= 2 && s.indexOf(f.name) >= 0) push(f.name);
+    });
+    return { whole: whole, parts: names.map(function (n) { return MAP[n]; }).filter(Boolean) };
   }
 
   function verdictLabel(v) {
@@ -579,9 +664,13 @@
   global.Knowledge = {
     FOODS: ALL_FOODS,
     EXTRA_FOODS: EXTRA_FOODS,
+    DISH_FOODS: DISH_FOODS,
     FOOD_TAGS: FOOD_TAGS,
     CONDITIONS: CONDITIONS,
     findFood: findFood,
+    isKnown: isKnown,
+    searchFoods: searchFoods,
+    analyzeDish: analyzeDish,
     judge: judge,
     getConditions: getConditions,
     verdictLabel: verdictLabel,

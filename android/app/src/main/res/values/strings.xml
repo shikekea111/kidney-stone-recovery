@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">能吃吗</string>
+    <string name="title_activity_main">能吃吗</string>
+    <string name="package_name">com.nengchima.app</string>
+    <string name="custom_url_scheme">com.nengchima.app</string>
+</resources>

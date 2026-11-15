@@ -1,0 +1,18 @@
+{
+  "name": "nengchima-android",
+  "version": "2.10.2",
+  "private": true,
+  "description": "能吃吗 · 多病种饮食宜忌助手 —— 安卓壳工程（PWA 源码保持不动）",
+  "scripts": {
+    "build:app": "node scripts/build-android-assets.mjs",
+    "sync:android": "npm run build:app && cap sync android",
+    "android": "npm run sync:android && cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "7.6.10",
+    "@capacitor/core": "7.6.10"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "7.6.10"
+  }
+}

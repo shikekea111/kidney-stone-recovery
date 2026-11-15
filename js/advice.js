@@ -187,11 +187,11 @@
     }
   }
 
-  // ---------- 今日饮食评分 ----------
-  function scoreTodayDiet(profile, timeline) {
+  // ---------- 饮食评分（dateStr 省略时算今天；传入日期可算历史任一天）----------
+  function scoreTodayDiet(profile, timeline, dateStr) {
     const conditions = Knowledge.getConditions(profile);
     const hasKidney = conditions.some(function (c) { return c.id === 'kidney_stone'; });
-    const today = Store.todayStr();
+    const today = dateStr || Store.todayStr();
     const dietEvents = timeline.filter(function (e) {
       return e.type === 'diet' && e.date === today;
     });

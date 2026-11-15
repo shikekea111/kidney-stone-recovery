@@ -1,14 +1,15 @@
 // sw.js - 离线缓存，使应用可"安装"并离线使用
-const CACHE = 'ks-helper-v22';
+const CACHE = 'ks-helper-v26';
 const ASSETS = [
   './',
   './index.html',
-  './manifest.webmanifest',
-  './css/styles.css',
-  './js/store.js',
-  './js/knowledge.js',
-  './js/advice.js',
-  './js/app.js',
+  './manifest.webmanifest?v=2.10.2',
+  './css/styles.css?v=2.10.2',
+  './js/store.js?v=2.10.2',
+  './js/knowledge.js?v=2.10.2',
+  './js/advice.js?v=2.10.2',
+  './js/ai.js?v=2.10.2',
+  './js/app.js?v=2.10.2',
   './icon.png'
 ];
 
@@ -34,7 +35,7 @@ self.addEventListener('fetch', function (e) {
   if (url.origin !== self.location.origin) return; // 跨域请求（如AI接口）直接放行
   // 网络优先：保证每次都拿到最新代码；离线时回退到缓存
   e.respondWith(
-    fetch(e.request).then(function (resp) {
+    fetch(e.request, { cache: 'no-cache' }).then(function (resp) {
       if (resp && resp.status === 200 && resp.type === 'basic') {
         const copy = resp.clone();
         caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
