@@ -1,15 +1,18 @@
-// 品牌资源生成器：从 logo.svg 生成安卓全密度图标 / 启动页 / PWA 图标 / 商店图标 / 48px 预览
+// 品牌资源生成器：视觉唯一源 = design-demos/final/（主人 2026-11-16 21:45 选定的 dir-2 终版）
 // 用法：node tools/brand/generate.mjs
-// 依赖：Node 22+ 与 headless Chromium（CHROME_PATH 可指定，见 findChrome）。无需图像库。
+// 依赖：Node 22+ 与 headless Chromium（CHROME_PATH 可指定，见 findChrome）。不引入图像库。
+// 说明：终版只有 PNG，没有可复用的 SVG 路径数据，因此沿用 Chromium CDP 渲染管线，
+//      把终版 PNG 以 data URI 嵌入后按目标尺寸缩放输出。logo.svg（A 方案）不再参与生成。
 import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, existsSync, readdirSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
-import { join, dirname, basename, delimiter } from 'node:path';
+import { join, dirname, delimiter } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const toolDir = dirname(fileURLToPath(import.meta.url));
 const project = join(toolDir, '..', '..');
 const resRoot = join(project, 'android', 'app', 'src', 'main', 'res');
+const finalDir = join(project, 'design-demos', 'final');
 const outDir = join(toolDir, 'out');
 mkdirSync(outDir, { recursive: true });
 
@@ -17,8 +20,23 @@ const BG = '#5A4836';
 const FG = '#F7EFE4';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const rawSvg = readFileSync(join(toolDir, 'logo.svg'), 'utf8');
-const logoInner = rawSvg.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '').trim();
+// ---------- 终版视觉源 ----------
+const REQUIRED = ['icon-1024.png', 'icon-512-maskable.png', 'ic_launcher_foreground.png'];
+for (const n of REQUIRED) {
+  if (!existsSync(join(finalDir, n))) {
+    console.error(`FAIL: 缺少视觉唯一源 design-demos/final/${n}`);
+    process.exit(1);
+  }
+}
+const dataUri = (p) => 'data:image/png;base64,' + readFileSync(p).toString('base64');
+const SRC = {
+  icon: dataUri(join(finalDir, 'icon-1024.png')),
+  maskable: dataUri(join(finalDir, 'icon-512-maskable.png')),
+  foreground: dataUri(join(finalDir, 'ic_launcher_foreground.png'))
+};
+// 启动页新旧对比：必须在覆盖前读取旧图
+const splashOldPath = join(resRoot, 'drawable-port-hdpi', 'splash.png');
+const OLD_SPLASH = existsSync(splashOldPath) ? dataUri(splashOldPath) : null;
 
 // ---------- Chromium 探测：CHROME_PATH → PATH → %LOCALAPPDATA%/ms-playwright 派生 ----------
 function findChrome() {
@@ -49,18 +67,22 @@ function findChrome() {
   return null;
 }
 
-// ---------- 模板 ----------
-function iconSvg(w, h, opts = {}) {
-  const { viewBox = '0 0 100 100', bg = null, round = false } = opts;
-  const clip = round ? '<defs><clipPath id="rc"><circle cx="50" cy="50" r="50"/></clipPath></defs>' : '';
-  const group = round ? '<g clip-path="url(#rc)">' : '<g>';
-  const rect = bg ? `<rect x="-300" y="-300" width="700" height="700" fill="${bg}"/>` : '';
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${viewBox}">${clip}${group}${rect}${logoInner}</g></svg>`;
+// ---------- 模板（全部来自终版 PNG） ----------
+function iconHtml(w, h, opts = {}) {
+  const { src = SRC.icon, round = false } = opts;
+  const radius = round ? '50%' : '0';
+  return `<div style="width:${w}px;height:${h}px;border-radius:${radius};overflow:hidden;background:${BG}">` +
+    `<img src="${src}" width="${w}" height="${h}" style="display:block;width:${w}px;height:${h}px"></div>`;
+}
+// adaptive foreground：终版前景自带透明安全区（实测不透明 bbox 占比约 15%，远低于 61% 上限），直接等比铺满画布
+function foregroundHtml(w, h) {
+  return `<div style="width:${w}px;height:${h}px;background:transparent;display:flex;align-items:center;justify-content:center">` +
+    `<img src="${SRC.foreground}" width="${w}" height="${h}" style="display:block;width:${w}px;height:${h}px"></div>`;
 }
 function splashHtml(w, h) {
   const s = Math.round(w * 0.3);
   return `<div style="width:${w}px;height:${h}px;background:${BG};display:flex;align-items:center;justify-content:center;overflow:hidden">` +
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 100 100">${logoInner}</svg></div>`;
+    `<img src="${SRC.icon}" width="${s}" height="${s}" style="display:block;width:${s}px;height:${s}px"></div>`;
 }
 function pngSize(p) {
   const b = readFileSync(p);
@@ -76,10 +98,9 @@ const DENSITIES = [
   ['xxhdpi', 144, 324], ['xxxhdpi', 192, 432]
 ];
 for (const [d, launcher, fg] of DENSITIES) {
-  add(`android/app/src/main/res/mipmap-${d}/ic_launcher.png`, launcher, launcher, iconSvg(launcher, launcher, { bg: BG }));
-  add(`android/app/src/main/res/mipmap-${d}/ic_launcher_round.png`, launcher, launcher, iconSvg(launcher, launcher, { bg: BG, round: true }), true);
-  // adaptive foreground：图形控制在中间 66% 安全区（viewBox 100/150）
-  add(`android/app/src/main/res/mipmap-${d}/ic_launcher_foreground.png`, fg, fg, iconSvg(fg, fg, { viewBox: '-25 -25 150 150' }), true);
+  add(`android/app/src/main/res/mipmap-${d}/ic_launcher.png`, launcher, launcher, iconHtml(launcher, launcher));
+  add(`android/app/src/main/res/mipmap-${d}/ic_launcher_round.png`, launcher, launcher, iconHtml(launcher, launcher, { round: true }), true);
+  add(`android/app/src/main/res/mipmap-${d}/ic_launcher_foreground.png`, fg, fg, foregroundHtml(fg, fg), true);
 }
 
 // 启动页：沿用现有每张图的原始尺寸，Logo 约屏宽 30%
@@ -92,23 +113,25 @@ for (const d of readdirSync(resRoot)) {
 }
 
 // PWA 图标
-add('icon.png', 512, 512, iconSvg(512, 512, { bg: BG }));
-add('icon-192.png', 192, 192, iconSvg(192, 192, { bg: BG }));
-add('icon-512.png', 512, 512, iconSvg(512, 512, { bg: BG }));
-add('icon-512-maskable.png', 512, 512, iconSvg(512, 512, { bg: BG, viewBox: '-12 -12 124 124' }));
-add('apple-touch-icon.png', 180, 180, iconSvg(180, 180, { bg: BG }));
+add('icon.png', 512, 512, iconHtml(512, 512));
+add('icon-192.png', 192, 192, iconHtml(192, 192));
+add('icon-512.png', 512, 512, iconHtml(512, 512));
+add('icon-512-maskable.png', 512, 512, iconHtml(512, 512, { src: SRC.maskable }));
+add('apple-touch-icon.png', 180, 180, iconHtml(180, 180));
 
 // 商店图标（交付物，不入库）
-add('tools/brand/out/store-icon-512.png', 512, 512, iconSvg(512, 512, { bg: BG }));
-add('tools/brand/out/store-icon-216.png', 216, 216, iconSvg(216, 216, { bg: BG }));
+add('tools/brand/out/store-icon-512.png', 512, 512, iconHtml(512, 512));
+add('tools/brand/out/store-icon-216.png', 216, 216, iconHtml(216, 216));
 
 // ---------- XML / manifest（幂等） ----------
 writeFileSync(join(resRoot, 'values', 'ic_launcher_background.xml'),
   `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">${BG}</color>\n</resources>\n`, 'utf8');
 writeFileSync(join(resRoot, 'drawable', 'ic_launcher_background.xml'),
   `<?xml version="1.0" encoding="utf-8"?>\n<vector xmlns:android="http://schemas.android.com/apk/res/android"\n    android:width="108dp" android:height="108dp"\n    android:viewportWidth="108" android:viewportHeight="108">\n    <path android:fillColor="${BG}" android:pathData="M0,0h108v108h-108z"/>\n</vector>\n`, 'utf8');
+// 该 vector 是 Capacitor 遗留资源，anydpi-v26 实际引用 @mipmap/ic_launcher_foreground（终版 PNG）。
+// 清掉旧 A 方案的线描水滴 + 弧线，改为透明占位，避免任何路径再渲染出旧视觉。
 writeFileSync(join(resRoot, 'drawable-v24', 'ic_launcher_foreground.xml'),
-  `<?xml version="1.0" encoding="utf-8"?>\n<vector xmlns:android="http://schemas.android.com/apk/res/android"\n    android:width="108dp" android:height="108dp"\n    android:viewportWidth="108" android:viewportHeight="108">\n    <path android:fillColor="#00000000" android:strokeColor="${FG}" android:strokeWidth="5"\n        android:strokeLineCap="round" android:strokeLineJoin="round"\n        android:pathData="M54,15 C54,15 82,45 82,65 A28,28 0 0 1 26,65 C26,45 54,15 54,15 Z"/>\n    <path android:fillColor="#00000000" android:strokeColor="${FG}" android:strokeWidth="4"\n        android:strokeLineCap="round" android:pathData="M19,94 Q54,104 89,94"/>\n</vector>\n`, 'utf8');
+  `<?xml version="1.0" encoding="utf-8"?>\n<!-- adaptive foreground 实际使用 @mipmap/ic_launcher_foreground（dir-2 终版 PNG）；本 vector 仅占位，避免旧 A 方案残留 -->\n<vector xmlns:android="http://schemas.android.com/apk/res/android"\n    android:width="108dp" android:height="108dp"\n    android:viewportWidth="108" android:viewportHeight="108">\n    <path android:fillColor="#00000000" android:pathData="M0,0h108v108h-108z"/>\n</vector>\n`, 'utf8');
 
 const manifestPath = join(project, 'manifest.webmanifest');
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
@@ -154,7 +177,6 @@ ws.onmessage = (e) => {
 const send = (method, params = {}) => new Promise((resolve) => { const id = ++seq; pending.set(id, resolve); ws.send(JSON.stringify({ id, method, params })); });
 await send('Page.enable');
 await send('Runtime.enable');
-// headless=new 下 omitBackground 单独不够，强制画布默认底色为全透明
 await send('Emulation.setDefaultBackgroundColorOverride', { color: { r: 0, g: 0, b: 0, a: 0 } });
 await sleep(300);
 
@@ -169,6 +191,28 @@ for (const job of jobs) {
   writeFileSync(job.path, Buffer.from(r.data, 'base64'));
 }
 console.log('已生成 PNG:', jobs.length, '张');
+
+// ---------- 自适应前景安全区实测（canvas 量不透明像素外接框） ----------
+const areaExpr = `(async()=>{
+  const img=new Image(); img.src=${JSON.stringify(SRC.foreground)}; await img.decode();
+  const c=document.createElement('canvas'); c.width=img.width; c.height=img.height;
+  const ctx=c.getContext('2d'); ctx.drawImage(img,0,0);
+  const d=ctx.getImageData(0,0,c.width,c.height).data;
+  let x0=c.width,y0=c.height,x1=-1,y1=-1;
+  for(let y=0;y<c.height;y++) for(let x=0;x<c.width;x++){
+    if(d[(y*c.width+x)*4+3]>0){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+  }
+  return JSON.stringify({w:c.width,h:c.height,bbox:[x0,y0,x1+1,y1+1],
+    bboxRatio:+(((x1-x0+1)*(y1-y0+1))/(c.width*c.height)).toFixed(6),
+    widthRatio:+((x1-x0+1)/c.width).toFixed(6), heightRatio:+((y1-y0+1)/c.height).toFixed(6)});
+})()`;
+const areaRes = await send('Runtime.evaluate', { expression: areaExpr, awaitPromise: true, returnByValue: true });
+const area = JSON.parse(areaRes.result.value);
+area.limitRatio = 0.61;
+area.pass = area.bboxRatio <= 0.61 && area.widthRatio <= 0.61 && area.heightRatio <= 0.61;
+area.source = 'design-demos/final/ic_launcher_foreground.png';
+writeFileSync(join(outDir, 'foreground-safe-area.json'), JSON.stringify(area, null, 2) + '\n');
+console.log('前景安全区实测:', JSON.stringify(area));
 
 // ---------- 48px 效果预览 ----------
 const pick = (rel) => {
@@ -188,7 +232,21 @@ const prev = await send('Page.captureScreenshot', { format: 'png', captureBeyond
 writeFileSync(join(outDir, 'preview-48px.png'), Buffer.from(prev.data, 'base64'));
 console.log('48px 预览:', join(outDir, 'preview-48px.png'));
 
-// 桌面图标 / 启动页的本地模拟预览（明确不是真机截图，真机证据仍需主人在设备上补）
+// 60px / 120px 目视预览（终版自带的原始尺寸，直接用最终产物核对）
+const p60 = 'data:image/png;base64,' + readFileSync(join(project, 'icon-192.png')).toString('base64');
+const p120 = 'data:image/png;base64,' + readFileSync(join(finalDir, 'icon-120.png')).toString('base64');
+const smallHtml = `<div style="width:680px;height:220px;background:${BG};display:flex;gap:40px;align-items:center;justify-content:center;font:13px sans-serif;color:${FG}">` +
+  `<div style="text-align:center"><img src="${p60}" width="60" height="60"><div style="margin-top:10px">PWA 产物缩放至 60px</div></div>` +
+  `<div style="text-align:center"><img src="${p120}" width="120" height="120"><div style="margin-top:10px">终版 120px（视觉源）</div></div>` +
+  `<div style="text-align:center"><img src="${p60}" width="240" height="240" style="image-rendering:pixelated"><div style="margin-top:10px">60px ×4 放大</div></div></div>`;
+await send('Emulation.setDeviceMetricsOverride', { width: 680, height: 220, deviceScaleFactor: 1, mobile: false });
+await send('Runtime.evaluate', { expression: `document.body.style.margin='0';document.body.innerHTML=${JSON.stringify(smallHtml)};true` });
+await sleep(150);
+const small = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+writeFileSync(join(outDir, 'preview-60-120.png'), Buffer.from(small.data, 'base64'));
+console.log('60/120px 预览:', join(outDir, 'preview-60-120.png'));
+
+// 桌面图标 / 启动页本地模拟预览（非真机）
 const launcherSrc = pick('android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png');
 const roundSrc = pick('android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png');
 const splashSrc = pick('android/app/src/main/res/drawable-port-hdpi/splash.png');
@@ -206,7 +264,20 @@ const mockShot = await send('Page.captureScreenshot', { format: 'png', captureBe
 writeFileSync(join(outDir, 'preview-device-mock.png'), Buffer.from(mockShot.data, 'base64'));
 console.log('桌面/启动页模拟预览:', join(outDir, 'preview-device-mock.png'), '（非真机截图）');
 
+// 启动页新旧对比（旧图在覆盖前已读入内存）
+if (OLD_SPLASH) {
+  const cmpHtml = `<div style="width:820px;height:380px;background:#211D19;display:flex;gap:30px;align-items:center;justify-content:center;font:14px sans-serif;color:${FG}">` +
+    `<div style="text-align:center"><img src="${OLD_SPLASH}" width="140" height="233" style="border:3px solid #8a7560"><div style="margin-top:10px;color:#c9b9a6">旧 · A 方案线描水滴+弧线</div></div>` +
+    `<div style="text-align:center"><img src="${splashSrc}" width="140" height="233" style="border:3px solid #2e7d4f"><div style="margin-top:10px;color:#9fd5b4">新 · dir-2 米白水滴+绿勾</div></div></div>`;
+  await send('Emulation.setDeviceMetricsOverride', { width: 820, height: 380, deviceScaleFactor: 1, mobile: false });
+  await send('Runtime.evaluate', { expression: `document.body.style.margin='0';document.body.innerHTML=${JSON.stringify(cmpHtml)};true` });
+  await sleep(150);
+  const cmp = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+  writeFileSync(join(outDir, 'preview-splash-compare.png'), Buffer.from(cmp.data, 'base64'));
+  console.log('启动页新旧对比:', join(outDir, 'preview-splash-compare.png'));
+}
+
 ws.close(); child.kill();
 await new Promise((r) => { if (child.exitCode !== null) return r(); child.once('close', r); setTimeout(r, 3000); });
 try { rmSync(profile, { recursive: true, force: true }); } catch {}
-console.log('完成。商店图标与预览在 tools/brand/out/（不入库）。');
+console.log('完成。商店图标、预览与安全区证据在 tools/brand/out/（不入库）。');
