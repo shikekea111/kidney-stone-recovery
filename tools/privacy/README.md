@@ -37,8 +37,9 @@ node --check js/*.js scripts/*.mjs tools/privacy/*.mjs
 ## 依赖
 
 - Node.js 22+（使用全局 `WebSocket`、`fetch`）。
-- Python（仅用标准库 `zipfile` 打/读 zip）：脚本按 `PYTHON` 环境变量 → `python` → `python3` → 本机常见路径依次探测，不写死某台机器。
-- Headless Chromium（仅两个浏览器级验收脚本用）：按 `CHROME_PATH` 环境变量 → 常见 Windows / Linux 路径探测。找不到会明确报错，不会静默跳过。
+- Python（仅用标准库 `zipfile` 打/读 zip）：四个脚本统一 `import` 本目录 `env.mjs`，探测顺序 `PYTHON` 环境变量 → `python` → `py -3`（Windows），找不到即明确报错退出，不写死任何机器路径。
+- Headless Chromium（仅两个浏览器级验收脚本用）：统一走 `env.mjs`，探测顺序 `CHROME_PATH` → `PATH` → `%LOCALAPPDATA%/ms-playwright` 或 `~/.cache/ms-playwright` 派生目录；找不到会明确报错，不静默跳过。
+- zip 生成固定条目时间戳（1980-01-01）与属性，同一文本源重复构建的 zip 字节完全一致，便于 diff 复验。
 
 ## 版本号口径
 

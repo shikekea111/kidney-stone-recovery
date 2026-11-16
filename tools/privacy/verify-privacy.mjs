@@ -4,7 +4,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
-import { execFileSync } from 'node:child_process';
+import { runPython } from './env.mjs';
 
 const toolDir = dirname(fileURLToPath(import.meta.url));
 const project = join(toolDir, '..', '..');
@@ -34,15 +34,6 @@ function diffCount(a, b) {
   for (let i = 0; i < Math.max(x.length, y.length); i++) if (x[i] !== y[i]) n++;
   return n;
 }
-function findPython() {
-  const candidates = [process.env.PYTHON, 'python', 'python3', 'C:/Python314/python.exe'].filter(Boolean);
-  for (const c of candidates) {
-    try { execFileSync(c, ['-c', 'print(1)'], { stdio: 'ignore' }); return c; }
-    catch {}
-  }
-  throw new Error('未找到 Python（用于读取 zip），可用 PYTHON 环境变量指定');
-}
-
 const checks = [];
 const add = (name, ok, detail) => { checks.push({ name, ok, detail }); };
 
@@ -118,7 +109,7 @@ const zipPath = join(outDir, 'privacy-site.zip');
 const py = `import zipfile, sys
 z = zipfile.ZipFile(sys.argv[1])
 print(','.join(z.namelist()))`;
-const zipOut = execFileSync(findPython(), ['-c', py, zipPath], { encoding: 'utf8' }).trim().split(/\r?\n/).map((s) => s.trim());
+const zipOut = runPython(py, [zipPath], { encoding: 'utf8' }).trim().split(/\r?\n/).map((s) => s.trim());
 add('zip 仅含根目录 index.html', zipOut[0] === 'index.html', `entries=${zipOut[0]}, ${statSync(zipPath).size} bytes`);
 
 console.log('\n=== 隐私文本验收报告 ===');

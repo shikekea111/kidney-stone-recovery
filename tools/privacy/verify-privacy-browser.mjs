@@ -8,23 +8,13 @@ import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { findChrome } from './env.mjs';
 
 const toolDir = dirname(fileURLToPath(import.meta.url));
 const index = readFileSync(join(toolDir, 'out', 'index.html'), 'utf8');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Chromium 路径允许用 CHROME_PATH 覆盖，避免绑定某台机器
-function findChrome() {
-  const candidates = [
-    process.env.CHROME_PATH,
-    'C:/Users/Administrator/AppData/Local/ms-playwright/chromium-1248/chrome-win64/chrome.exe',
-    'C:/Program Files/Google/Chrome/Application/chrome.exe',
-    'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-    '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'
-  ].filter(Boolean);
-  for (const c of candidates) if (existsSync(c)) return c;
-  return null;
-}
+// Chromium 探测统一走 env.mjs（CHROME_PATH → PATH → ms-playwright 派生），不绑定某台机器
 const chrome = findChrome();
 
 if (!chrome) {

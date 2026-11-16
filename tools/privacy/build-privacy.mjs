@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
+import { runPython } from './env.mjs';
 
 const toolDir = dirname(fileURLToPath(import.meta.url));
 const project = join(toolDir, '..', '..');
@@ -67,22 +67,21 @@ writeFileSync(join(outDir, 'privacy-visible-text.txt'), visibleText, 'utf8');
 // 兼容副本：早期草稿文件名，保持与网页同一文本，避免历史引用读到旧版
 writeFileSync(join(outDir, 'privacy.html'), indexHtml, 'utf8');
 
-// Python 仅用于打 zip（标准库 zipfile）。不写死本机路径，方便其它机器复现。
-function findPython() {
-  const candidates = [process.env.PYTHON, 'python', 'python3', 'C:/Python314/python.exe'].filter(Boolean);
-  for (const c of candidates) {
-    try { execFileSync(c, ['-c', 'print(1)'], { stdio: 'ignore' }); return c; }
-    catch {}
-  }
-  throw new Error('未找到 Python（用于生成 zip），可用 PYTHON 环境变量指定');
-}
+// Python 仅用于打 zip（标准库 zipfile）；解释器探测统一走 env.mjs，不写死本机路径。
 const zipPath = join(outDir, 'privacy-site.zip');
+// 固定 ZIP 条目时间戳与属性，保证同一文本源重跑后 zip 字节完全一致（否则 mtime 变化会让产物 diff 非 0）
 const py = `import zipfile, sys
 out, src = sys.argv[1], sys.argv[2]
+info = zipfile.ZipInfo('index.html', date_time=(1980, 1, 1, 0, 0, 0))
+info.compress_type = zipfile.ZIP_DEFLATED
+info.create_system = 0
+info.external_attr = 0o644 << 16
+with open(src, 'rb') as f:
+    data = f.read()
 with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:
-    z.write(src, 'index.html')
+    z.writestr(info, data)
 print('zip written:', out)`;
-execFileSync(findPython(), ['-c', py, zipPath, join(outDir, 'index.html')], { stdio: 'inherit' });
+runPython(py, [zipPath, join(outDir, 'index.html')], { stdio: 'inherit' });
 
 // App 内文本数据（同一文本源），供首启弹窗与内置政策页渲染；PWA 与 APK 共用
 const records = lines.map((l) => {
