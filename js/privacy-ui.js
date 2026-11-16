@@ -3,7 +3,7 @@
 // 改动隐私政策正文请改 privacy-source.txt 后重跑 build-privacy.mjs，不要直接改本文件。
 (function (global) {
   'use strict';
-  var VERSION = '2026-11-15';
+  var VERSION = '2026-11-16';
   var KEY = 'ks_privacy_agreed_version';
   var ENABLE_IN_PWA = false; // PWA 不弹首启窗，只在原生 APK 内弹；PWA 保留「我的」页入口
   var DATA = global.PRIVACY_CONTENT || [];
