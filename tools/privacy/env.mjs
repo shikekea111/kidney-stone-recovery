@@ -1,5 +1,5 @@
 // 工具运行环境探测：不绑定任何一台机器的绝对路径。
-// Python：PYTHON → python → py -3（仅 Windows）；Chromium：CHROME_PATH → PATH → ms-playwright 派生目录。
+// Python：PYTHON → python → python3 → py -3（仅 Windows）；Chromium：CHROME_PATH → PATH → ms-playwright 派生目录。
 import { existsSync, readdirSync } from 'node:fs';
 import { spawnSync, execFileSync } from 'node:child_process';
 import { join, delimiter } from 'node:path';
@@ -8,6 +8,7 @@ function pythonCommand() {
   const candidates = [];
   if (process.env.PYTHON) candidates.push([process.env.PYTHON, []]);
   candidates.push(['python', []]);
+  candidates.push(['python3', []]);
   if (process.platform === 'win32') candidates.push(['py', ['-3']]);
   for (const [cmd, prefix] of candidates) {
     try {
@@ -21,7 +22,7 @@ function pythonCommand() {
 export function runPython(code, args = [], opts = {}) {
   const found = pythonCommand();
   if (!found) {
-    throw new Error('未找到 Python：已依次尝试 PYTHON 环境变量 / python / py -3。请安装 Python 或设置 PYTHON。');
+    throw new Error('未找到 Python：已依次尝试 PYTHON 环境变量 / python / python3 / py -3。请安装 Python 或设置 PYTHON。');
   }
   return execFileSync(found.cmd, [...found.prefix, '-c', code, ...args], opts);
 }
