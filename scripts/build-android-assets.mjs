@@ -43,7 +43,7 @@ function stripAI(src) {
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 
-for (const item of ['index.html', 'icon.png', 'manifest.webmanifest']) {
+for (const item of ['index.html', 'icon.png', 'icon-192.png', 'icon-512.png', 'icon-512-maskable.png', 'apple-touch-icon.png', 'manifest.webmanifest']) {
   copyFileSync(join(root, item), join(out, item));
 }
 copyTree(join(root, 'css'), join(out, 'css'));
