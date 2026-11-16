@@ -71,3 +71,83 @@ jobs:
           name: nengchima-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+  # ===== WB-8 单机版举证（等推送恢复后启用）=====
+  single-machine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: 确保 Android SDK 35 / build-tools 可用
+        run: |
+          SDKROOT="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          SDKMGR="$SDKROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ -x "$SDKMGR" ]; then
+            yes | "$SDKMGR" --licenses >/dev/null 2>&1 || true
+            "$SDKMGR" --install "platforms;android-35" "build-tools;35.0.0" >/dev/null 2>&1 || true
+          fi
+          ls "$SDKROOT/build-tools" || true
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 依赖 build:app 支持 SINGLE_MACHINE=1（改动见 WB-8-CI方案.md 第 3 节，尚未落地）
+      - name: 生成单机版离线资源
+        run: |
+          SINGLE_MACHINE=1 npm run build:app
+          echo "--- 产物自检：不得残留 AI 与远程地址 ---"
+          if grep -rInE "api\.deepseek\.com|js/ai\.js|AI 助手|fetch\(" www/; then
+            echo "::error::单机版仍残留 AI 入口或网络调用"; exit 1
+          fi
+          if grep -rIn "https\?://" www/ --include=*.js --include=*.html; then
+            echo "::error::单机版仍残留远程 URL"; exit 1
+          fi
+
+      - name: 移除联网权限并同步
+        run: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          sed -i '/android\.permission\.INTERNET/d' "$MANIFEST"
+          sed -i '/android\.permission\.ACCESS_NETWORK_STATE/d' "$MANIFEST"
+          grep -n "uses-permission" "$MANIFEST" || echo "(无任何 uses-permission)"
+          npx cap sync android
+
+      - name: 构建单机版 APK
+        run: |
+          sed -i 's/\r$//' android/gradlew
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: aapt 权限举证（同时无 INTERNET / ACCESS_NETWORK_STATE）
+        run: |
+          SDKROOT="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          AAPT=$(find "$SDKROOT/build-tools" -type f -name aapt | sort -V | tail -1)
+          if [ -z "$AAPT" ]; then echo "::error::未找到 aapt"; exit 1; fi
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          "$AAPT" dump permissions "$APK" | tee permissions.txt
+          if grep -qE "android\.permission\.INTERNET|android\.permission\.ACCESS_NETWORK_STATE" permissions.txt; then
+            echo "::error::单机版仍声明联网权限"; exit 1
+          fi
+          echo "PASS: 未声明 INTERNET / ACCESS_NETWORK_STATE" | tee -a permissions.txt
+
+      - name: 上传单机版 APK 与权限证据
+        uses: actions/upload-artifact@v4
+        with:
+          name: nengchima-single-machine-evidence
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            permissions.txt
+          if-no-files-found: error
