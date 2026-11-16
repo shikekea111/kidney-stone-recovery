@@ -1,6 +1,9 @@
 # 依赖/工具
 node_modules/
 
+# 隐私政策生成产物（tools/privacy/build-privacy.mjs 可随时重建）
+/tools/privacy/out/
+
 # Capacitor 安卓壳工程（构建产物）
 /www/
 /android/.gradle/
