@@ -72,8 +72,9 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-  # ===== WB-8 单机版举证（等推送恢复后启用）=====
+  # 手动触发验证；通过后再放开 push
   single-machine:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
