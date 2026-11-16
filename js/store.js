@@ -9,7 +9,9 @@
   const LS_PROFILE = 'ks_profile';
   const LS_TIMELINE = 'ks_timeline';
   const LS_REPORTS = 'ks_reports';
+  /* AI-BEGIN */
   const LS_AI = 'ks_ai';
+  /* AI-END */
   const LS_USERFOODS = 'ks_user_foods';
   const LS_PENDING = 'ks_pending_foods';
 
@@ -96,6 +98,7 @@
     deleteImage(id).catch(function () {});
   }
 
+  /* AI-BEGIN */
   // ---------- AI 配置（预留，默认未启用；备份不导出 Key） ----------
   function getAIConfig() {
     let c = null;
@@ -116,6 +119,7 @@
     return o;
   }
 
+  /* AI-END */
   // ---------- IndexedDB (report images) ----------
   function openDB() {
     return new Promise(function (resolve, reject) {
@@ -256,7 +260,9 @@
     getReports: getReports, addReport: addReport, deleteReport: deleteReport,
     putImage: putImage, getImage: getImage, deleteImage: deleteImage,
     exportAll: exportAll, importAll: importAll,
+    /* AI-BEGIN */
     getAIConfig: getAIConfig, saveAIConfig: saveAIConfig,
+    /* AI-END */
     getUserFoods: getUserFoods, addUserFood: addUserFood,
     getPendingFoods: getPendingFoods, addPendingFood: addPendingFood
   };

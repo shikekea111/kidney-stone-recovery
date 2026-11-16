@@ -10,7 +10,7 @@
   let currentTab = 'advice';
   let dietPicks = [];
   let reportPendingBlob = null;
-  const APP_VERSION = '2.10.2';
+  const APP_VERSION = '2.10.3';
 
   // ---------- 统一线性图标（替代 emoji，跨机型一致）----------
   const ICONS = {
@@ -288,9 +288,11 @@
       '<button onclick="App.quickDiet()">' + icon('utensils', 20) + '<span>记饮食</span></button>' +
       '<button onclick="App.openForm(\'med\')">' + icon('pill', 20) + '<span>记用药</span></button></div>';
 
+    /* AI-BEGIN */
     // ⑦ AI 入口弱化 + 免责常驻
     html += '<div class="ai-mini"><button onclick="App.openAIChat()">' + icon('chat', 16) +
       '有复杂问题？问问 AI 助手 <span>›</span></button></div>';
+    /* AI-END */
     html += '<div class="disclaimer-mini">' + esc(String(Advice.DISCLAIMER || '').replace(/^⚠️\s*/, '')) + '</div>';
     view.innerHTML = html;
   }
@@ -439,6 +441,17 @@
     openModal(html);
     renderPicks();
   }
+  // 候选统一计算：搜索命中 + 菜名拆解，供展示与「全部加入」共用，避免两处口径不一致
+  function dietCandidates(q) {
+    const exact = Knowledge.searchFoods(q);
+    const dish = Knowledge.analyzeDish(q);
+    const whole = dish.whole;
+    // 整道菜排最前：避免「襄阳豆腐面」只识别出「豆腐」，漏掉重盐辣汤的风险
+    const ordered = whole ? [whole].concat(exact.filter(function (f) { return f !== whole; })) : exact;
+    // 搜「黑椒牛排」时拆解也会认出「牛排」；已在候选列表里的不重复列、也不重复记
+    const parts = dish.parts.filter(function (f) { return ordered.indexOf(f) < 0; });
+    return { whole: whole, ordered: ordered, parts: parts };
+  }
   function dietSearch() {
     const q = val('diet_search').trim();
     const box = $('#diet_cand');
@@ -446,12 +459,8 @@
     if (!q) { box.innerHTML = ''; return; }
     const profile = Store.getProfile();
     const conds = Knowledge.getConditions(profile);
-    const exact = Knowledge.searchFoods(q);
-    const dish = Knowledge.analyzeDish(q);
-    const whole = dish.whole;
-    // 整道菜排最前：避免「襄阳豆腐面」只识别出「豆腐」，漏掉重盐辣汤的风险
-    const ordered = whole ? [whole].concat(exact.filter(function (f) { return f !== whole; })) : exact;
-    const parts = dish.parts;
+    const c = dietCandidates(q);
+    const whole = c.whole, ordered = c.ordered, parts = c.parts;
     function row(f) {
       const j = Knowledge.judge(f, conds);
       const sub = (f === whole) ? f.cat + ' · 整道菜（含汤底调料）' : f.cat;
@@ -472,7 +481,7 @@
   function addAllParts() {
     const q = val('diet_search').trim();
     if (!q) return;
-    const parts = Knowledge.analyzeDish(q).parts;
+    const parts = dietCandidates(q).parts;
     parts.forEach(function (f) { addPick(f.name); });
     const s = $('#diet_search'); if (s) s.value = '';
     const box = $('#diet_cand'); if (box) box.innerHTML = '';
@@ -796,9 +805,11 @@
 
     html += '<div class="card" onclick="App.openReports()" style="cursor:pointer"><div class="row-between"><h2>' + icon('file', 18, 'h2-ico') + '检查报告</h2><span class="muted">' + reports.length + ' 份 ›</span></div><div class="muted">上传报告图片与关键指标，随时回看</div></div>';
 
+    /* AI-BEGIN */
     const ai = Store.getAIConfig();
     const aiStatus = (ai.enabled && ai.apiKey) ? '已启用' : '未启用';
     html += '<div class="card" onclick="App.openAISettings()" style="cursor:pointer"><div class="row-between"><h2>' + icon('chat', 18, 'h2-ico') + 'AI 助手设置</h2><span class="muted">' + aiStatus + ' ›</span></div><div class="muted">接入大模型后可自由提问、解读报告。默认关闭，启用需填写 API Key，数据策略本地优先。</div></div>';
+    /* AI-END */
 
     html += '<div class="sec-title">数据与设置</div>';
     html += '<div class="card"><h2>' + icon('save', 18, 'h2-ico') + '数据备份</h2><p class="muted">数据只存在本机。换手机前请导出备份，再导入新手机。</p>';
@@ -1132,6 +1143,7 @@
     inp.click();
   }
 
+  /* AI-BEGIN */
   // ---------- AI 助手（预留接入，默认关闭） ----------
   function openAIChat() {
     const cfg = Store.getAIConfig();
@@ -1204,14 +1216,23 @@
     go('me');
   }
 
+  /* AI-END */
   // ---------- 出院记录识别 ----------
   function openReportOCR() {
     let html = '<h2>' + icon('hospital', 18, 'h2-ico') + '出院记录识别</h2>';
+    /* AI-BEGIN */
     html += '<div class="ocr-warn">为保护隐私，识别过程在本地完成；若开启 AI，仅当点击「用 AI 解析」时才会发送报告文字。不会上传图片。</div>';
+    /* AI-ELSE */
+    html += '<div class="ocr-warn">识别过程完全在本机完成，不会上传任何内容。</div>';
+    /* AI-END */
     html += '<div class="field"><label>拍照/上传出院记录</label><input type="file" id="ocr_img" accept="image/*" onchange="App.ocrPreview(this)"></div>';
     html += '<div id="ocr_prev"></div>';
     html += '<div class="field"><label>或粘贴报告文字（可先用微信/扫描软件识别文字后粘贴）</label><textarea id="ocr_text" placeholder="粘贴出院记录全文…"></textarea></div>';
+    /* AI-BEGIN */
     html += '<div class="modal-actions"><button class="btn ghost" onclick="App.closeModal()">取消</button><button class="btn secondary" onclick="App.parseReportText(false)">本地规则解析</button><button class="btn" onclick="App.parseReportText(true)">用 AI 解析</button></div>';
+    /* AI-ELSE */
+    html += '<div class="modal-actions"><button class="btn ghost" onclick="App.closeModal()">取消</button><button class="btn secondary" onclick="App.parseReportText(false)">本地规则解析</button></div>';
+    /* AI-END */
     html += '<div id="ocr_result"></div>';
     openModal(html, { center: true });
   }
@@ -1307,7 +1328,8 @@
     const resultBox = $('#ocr_result');
     if (resultBox) resultBox.innerHTML = '<div class="ocr-loading">正在解析…</div>';
 
-    let data;
+    let data = localParseReport(text);
+    /* AI-BEGIN */
     if (useAI) {
       const r = await AI.parseReport(text);
       if (!r.ok) {
@@ -1315,9 +1337,8 @@
         return;
       }
       data = r.data;
-    } else {
-      data = localParseReport(text);
     }
+    /* AI-END */
     showParsedResult(data);
   }
   function showParsedResult(data) {
@@ -1441,8 +1462,10 @@
     exportBackup: exportBackup, importBackup: importBackup,
     delEvent: delEvent, quickSymptom: quickSymptom, quickWater: quickWater, quickDiet: quickDiet,
     quickAddWater: quickAddWater, showReminders: showReminders,
+    /* AI-BEGIN */
     openAIChat: openAIChat, sendAI: sendAI, aiKey: aiKey,
     openAISettings: openAISettings, saveAISettings: saveAISettings,
+    /* AI-END */
     openReportOCR: openReportOCR, ocrPreview: ocrPreview,
     parseReportText: parseReportText, applyParsedProfile: applyParsedProfile
   };
