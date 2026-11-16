@@ -584,6 +584,7 @@ input[type="radio"] { display: none; }
 .ocr-table .ocr-k { width: 80px; color: var(--text-soft); font-weight: 600; }
 .ocr-table .ocr-v { word-break: break-all; }
 
+/* AI-BEGIN */
 /* ============================================================
    AI 助手
    ============================================================ */
@@ -624,6 +625,7 @@ input[type="radio"] { display: none; }
 .ai-input-row textarea { flex: 1; min-height: 46px; max-height: 120px; }
 .ai-send { width: auto; padding: 0 var(--sp-4); min-height: 46px; }
 
+/* AI-END */
 /* ============================================================
    降低动效偏好
    ============================================================ */
@@ -806,3 +808,27 @@ input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 3px rgba(110, 90, 
 .tc-x { font-size: 11px; color: var(--text-mute); margin-top: 6px; height: 16px; line-height: 16px; }
 .tc-x.today { color: var(--text); font-weight: 700; }
 .tc-foot { margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--line-soft); font-size: 12px; color: var(--text-soft); line-height: 1.6; }
+
+/* ---- 隐私政策弹窗与内置政策页（WB-2） ---- */
+.privacy-overlay { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(28, 24, 20, .55); align-items: center; justify-content: center; padding: 20px; }
+.privacy-overlay.is-open { display: flex; }
+.privacy-dialog { width: 100%; max-width: 420px; max-height: 86vh; overflow: auto; background: #fff; border-radius: 14px; padding: 22px 20px; box-shadow: 0 12px 36px rgba(0, 0, 0, .18); }
+.privacy-dialog h2 { margin: 0 0 12px; font-size: 18px; color: var(--text); }
+.privacy-dialog p { margin: 0 0 14px; font-size: 14px; line-height: 1.75; color: var(--text-soft); }
+.privacy-link { display: block; width: 100%; padding: 10px 0; border: 0; background: none; color: #5a4836; font-size: 14px; text-align: left; text-decoration: underline; cursor: pointer; }
+.privacy-actions { display: flex; gap: 10px; margin-top: 10px; }
+.privacy-btn { flex: 1; padding: 11px 8px; border-radius: 9px; border: 1px solid var(--line); font-size: 14px; cursor: pointer; background: #fff; color: var(--text); }
+.privacy-btn.primary { background: #5a4836; border-color: #5a4836; color: #fff; }
+.privacy-btn.ghost { background: #f4f2ee; }
+.privacy-tip { margin: 12px 0 0 !important; font-size: 12px !important; color: var(--text-mute) !important; }
+.privacy-page { padding: 0; }
+.privacy-sheet { width: 100%; max-width: 760px; height: 100%; overflow: auto; background: #fff; padding: 16px 20px 40px; }
+.privacy-back { display: inline-block; margin-bottom: 16px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--text); font-size: 14px; cursor: pointer; }
+.privacy-content { max-width: 720px; margin: 0 auto; font-size: 15px; line-height: 1.85; color: var(--text); }
+.privacy-content h1 { font-size: 21px; margin: 0 0 4px; }
+.privacy-content h2 { font-size: 16px; margin: 26px 0 8px; }
+.privacy-content p { margin: 0 0 12px; }
+.privacy-content .meta { font-size: 13px; color: var(--text-mute); margin-bottom: 22px; }
+.privacy-content .todo { color: #a32d2d; }
+.privacy-entry { cursor: pointer; }
+.privacy-entry h2 { display: flex; align-items: center; gap: 6px; }
