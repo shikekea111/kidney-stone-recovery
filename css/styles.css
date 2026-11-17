@@ -688,10 +688,10 @@ input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 3px rgba(110, 90, 
 .hs-label { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--text-mute); }
 .hs-date { font-size: 12px; color: var(--text-mute); font-variant-numeric: tabular-nums; }
 .hs-main { display: flex; align-items: center; gap: var(--sp-5); }
-.hs-ring-wrap { position: relative; width: 92px; height: 92px; flex: 0 0 auto; }
+.hs-ring-wrap { position: relative; width: 92px; height: 92px; flex: 0 0 auto; padding: 0; }
 .hs-ring-wrap svg { display: block; }
 .hs-ring-val { transition: stroke-dashoffset .6s var(--ease); }
-.hs-ring-tx { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.hs-ring-tx { position: absolute; top: 0; left: 0; width: 92px; height: 92px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
 .hs-ring-tx b { font-size: 30px; font-weight: 800; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
 .hs-ring-tx small { font-size: 11px; color: var(--text-mute); margin-top: 4px; }
 .hs-ring-tx b.hs-none { font-size: 14px; font-weight: 600; color: var(--text-mute); letter-spacing: 0; }
