@@ -10,7 +10,7 @@
   let currentTab = 'advice';
   let dietPicks = [];
   let reportPendingBlob = null;
-  const APP_VERSION = '2.10.4';
+  const APP_VERSION = '2.11.0';
 
   // ---------- 统一线性图标（替代 emoji，跨机型一致）----------
   const ICONS = {
@@ -375,7 +375,7 @@
     html += '</div>';
     html += '<div class="tc-foot">' + fmt(days[0].date) + ' – ' + fmt(days[6].date) +
       ' · 7 天里 ' + recorded.length + ' 天有记录' +
-      (avg === null ? '。从今天开始记一笔，这里就会出现趋势。' : '。分数按当前档案判定，肾结石用户还含当日记入的饮水量。') + '</div>';
+      (avg === null ? '。从今天开始记一笔，这里就会出现趋势。' : '。分数按当前档案判定。') + '</div>';
     html += '</div>';
     return html;
   }
@@ -766,7 +766,7 @@
     html += '<div class="card card-hero" onclick="App.openProfileForm()" style="cursor:pointer"><div class="row-between"><h2>' + icon('user', 18, 'h2-ico') + '个人档案</h2><span class="muted">编辑 ›</span></div>';
     if (p) {
       html += '<div class="profile-line"><b>' + esc(p.name || '未填姓名') + '</b>' + (p.gender ? ' · ' + esc(p.gender) : '') + (p.age ? ' · ' + esc(p.age) + '岁' : '') + '</div>';
-      html += '<div class="muted">诊断：' + esc(p.diagnosis || '肾结石') + (p.affectedSide ? '（' + esc(p.affectedSide) + '）' : '') + '</div>';
+      html += '<div class="muted">诊断：' + esc(p.diagnosis || '未填写') + (p.affectedSide ? '（' + esc(p.affectedSide) + '）' : '') + '</div>';
       html += '<div class="muted">手术日期：' + esc(p.surgeryDate || '未填') + (p.surgeryType ? ' · ' + esc(p.surgeryType) : '') + '</div>';
       const conds = Knowledge.getConditions(p);
       if (conds.length) {
@@ -796,7 +796,7 @@
         html += '<div class="muted" style="font-size:12px">档案更新于 ' + esc(updatedAgo(p.updatedAt)) + '</div>';
       }
     } else {
-      html += '<div class="muted">尚未填写，点此完善（建议必填手术日期与结石类型）</div>';
+      html += '<div class="muted">尚未填写，点此完善（选择病种后，宜忌判定会更准）</div>';
     }
     html += '</div>';
 

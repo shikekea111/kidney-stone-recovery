@@ -1,6 +1,6 @@
 {
   "name": "nengchima-android",
-  "version": "2.10.4",
+  "version": "2.11.0",
   "private": true,
   "description": "能吃吗 · 多病种饮食宜忌助手 —— 安卓壳工程（PWA 源码保持不动）",
   "scripts": {
