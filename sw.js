@@ -1,18 +1,19 @@
 // sw.js - 离线缓存，使应用可"安装"并离线使用
-const CACHE = 'ks-helper-v29';
+const CACHE = 'ks-helper-v30';
 const ASSETS = [
   './',
   './index.html',
-  './manifest.webmanifest?v=2.11.0',
-  './css/styles.css?v=2.11.0',
-  './js/store.js?v=2.11.0',
-  './js/knowledge.js?v=2.11.0',
-  './js/advice.js?v=2.11.0',
-  './js/ai.js?v=2.11.0',
-  './js/app.js?v=2.11.0',
+  './manifest.webmanifest?v=2.11.1',
+  './css/styles.css?v=2.11.1',
+  './js/store.js?v=2.11.1',
+  './js/knowledge.js?v=2.11.1',
+  './js/advice.js?v=2.11.1',
+  './js/ai.js?v=2.11.1',
+  './js/app.js?v=2.11.1',
   // 隐私政策脚本：index.html 已引用，装完 PWA 立刻断网也要能打开
-  './js/privacy-data.js?v=2.11.0',
-  './js/privacy-ui.js?v=2.11.0',
+  './js/privacy-data.js?v=2.11.1',
+  './js/privacy-ui.js?v=2.11.1',
+  './js/back-button.js?v=2.11.1',
   './icon.png'
 ];
 

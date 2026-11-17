@@ -10,7 +10,7 @@
   let currentTab = 'advice';
   let dietPicks = [];
   let reportPendingBlob = null;
-  const APP_VERSION = '2.11.0';
+  const APP_VERSION = '2.11.1';
 
   // ---------- 统一线性图标（替代 emoji，跨机型一致）----------
   const ICONS = {

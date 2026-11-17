@@ -59,13 +59,28 @@
     document.body.appendChild(root);
   }
 
+  var LAYERS = ['privacyOverlay', 'privacyPage', 'privacyBlocked'];
   function show(id) {
-    ['privacyOverlay', 'privacyPage', 'privacyBlocked'].forEach(function (x) {
+    LAYERS.forEach(function (x) {
       var el = document.getElementById(x);
       if (el) el.classList.toggle('is-open', x === id);
     });
   }
   function hideAll() { show(''); }
+  // 当前打开的隐私层 id（无则 ''）；供系统返回键判断，不改同意逻辑。
+  function openLayer() {
+    for (var i = 0; i < LAYERS.length; i++) {
+      var el = document.getElementById(LAYERS[i]);
+      if (el && el.classList.contains('is-open')) return LAYERS[i];
+    }
+    return '';
+  }
+  function isOpen() { return !!openLayer(); }
+  // 只关闭「可关闭」的层：政策页返回首启弹窗；首启弹窗与拒绝阻止层属强制层，返回键不得绕过。
+  function close() {
+    if (openLayer() === 'privacyPage') { show('privacyOverlay'); return true; }
+    return false;
+  }
 
   // 拒绝：原生 APK 调用官方 @capacitor/app 的 App.exitApp() 真正退出；
   // Web guard —— 非原生环境绝不触碰原生插件，降级为「阻止继续使用」层。
@@ -121,7 +136,14 @@
     reset: function () { try { global.localStorage.removeItem(KEY); } catch (e) {} },
     version: VERSION,
     isNative: isNative,
-    enableInPwa: ENABLE_IN_PWA
+    enableInPwa: ENABLE_IN_PWA,
+    isOpen: isOpen,
+    close: close,
+    // 首启弹窗/拒绝阻止层为强制同意层，返回键必须忽略（不可绕过）
+    isMandatory: function () {
+      var layer = openLayer();
+      return layer === 'privacyOverlay' || layer === 'privacyBlocked';
+    }
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
