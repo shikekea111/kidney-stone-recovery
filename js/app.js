@@ -815,7 +815,7 @@
     html += '<div class="card"><h2>' + icon('save', 18, 'h2-ico') + '数据备份</h2><p class="muted">数据只存在本机。换手机前请导出备份，再导入新手机。</p>';
     html += '<div style="display:flex;gap:8px"><button class="btn secondary sm" onclick="App.exportBackup()">导出备份</button><button class="btn secondary sm" onclick="App.importBackup()">导入备份</button></div></div>';
 
-    html += '<div class="card"><h2>' + icon('info', 18, 'h2-ico') + '关于与免责</h2><p class="muted" style="white-space:pre-line">本应用所有内容仅为健康信息整理与通用建议，不能替代医生诊断与治疗。如出现剧烈疼痛、发热、持续血尿等请及时就医。\n\n所有数据仅保存在你本机浏览器，不会上传任何服务器。</p></div>';
+    html += '<div class="card"><h2>' + icon('info', 18, 'h2-ico') + '关于与免责</h2><p class="muted" style="white-space:pre-line">' + esc(String(Advice.DISCLAIMER || '').replace(/^⚠️\s*/, '')) + '\n\n所有数据仅保存在你的本机，不会上传任何服务器。</p></div>';
 
     const pend = Store.getPendingFoods().filter(function (w) { return !Knowledge.isKnown(w); });
     if (pend.length) {
